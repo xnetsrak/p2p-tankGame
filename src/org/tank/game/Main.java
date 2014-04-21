@@ -9,7 +9,6 @@ public class Main
 	
 	public static void main(String[] args) 
 	{
-        
-		new GuiStart().setVisible(true);
+		tankgame myGame = new tankgame();
     }
 }
