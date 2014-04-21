@@ -4,8 +4,11 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.geom.AffineTransform;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -80,8 +83,8 @@ public class GuiStart extends JFrame implements KeyListener
 			
 			
 			Graphics2D g2 = (Graphics2D)g;
-			  //g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-			  //RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+			RenderingHints.VALUE_ANTIALIAS_ON);
 			  
 			  g2.setColor(Color.red);
 			  
@@ -90,19 +93,24 @@ public class GuiStart extends JFrame implements KeyListener
 			  else if(backwards)
 				  tankX -= 5;
 			  else if(turnRight)
-				  tankAngle += 0.05;
+				  tankAngle += 1.05;
 			  else if(turnLeft)
-				  tankAngle -= 0.05;
+				  tankAngle -= 1.05;
 			  //Rectangle rect2 = new Rectangle(tankX, tankY, 70, 50);
-			  Rectangle r = new Rectangle(tankX,tankY,70, 50);
-			  g2.rotate(tankAngle, tankX+35, tankY+25);
-			  g2.draw(r);
-			  g2.fill(r);	
+			  Rectangle rect = new Rectangle(tankX,tankY,70, 50);
+			  //g2.rotate(tankAngle, tankX+35, tankY+25);
+			  
+			  g2.translate(rect.x+(rect.width/2), rect.y+(rect.height/2));
+			  g2.rotate(Math.toRadians(tankAngle));
+			  //g2.rotate(0 - tankAngle, rect.getX(), rect.getY() + 5);
+
+			  //AffineTransform at = new AffineTransform();
+              //at.rotate(Math.toRadians(tankAngle), 70, 50);
+              //g2.setTransform(at);
+			  
+			  g2.draw(rect);
+			  g2.fill(rect);	
 			  
 		}
-
-
 	}
-
-	
 }
