@@ -39,20 +39,15 @@ public class tankgame extends JFrame implements ActionListener
 		jMenuBar = new JMenuBar();
 		jMenu = new JMenu("Game");
 
-		jmiNew = new JMenuItem("start new game");
 		jmiExit = new JMenuItem("exit");
 		jmiJoinCreate = new JMenuItem("join/create game");
 
 		jmiExit.addActionListener(this);
 		jmiExit.setActionCommand("exit");
-
-		jmiNew.addActionListener(this);
-		jmiNew.setActionCommand("new");
 		
 		jmiJoinCreate.addActionListener(this);
 		jmiJoinCreate.setActionCommand("joincreate");
 
-		jMenu.add(jmiNew);
 		jMenu.add(jmiExit);
 		jMenu.add(jmiJoinCreate);
 		jMenuBar.add(jMenu);
@@ -66,16 +61,6 @@ public class tankgame extends JFrame implements ActionListener
 	}
 
 	public void actionPerformed(ActionEvent e) {
-
-		if (e.getActionCommand().equals("new")) {
-
-			mp = new MyPanel(currStatus);
-			Thread t = new Thread(mp);
-			this.addKeyListener(mp);
-			this.add(mp);
-			t.start();
-			this.setVisible(true);
-		}
 
 		if (e.getActionCommand().equals("exit")) {
 
@@ -98,6 +83,7 @@ public class tankgame extends JFrame implements ActionListener
 	    // disable the UPnP setting (in case you are testing this on a NATted LAN)
 	    env.getParameters().setString("nat_search_policy","never");
 	    
+	    PastrySetup pSetup = null;
 	    try {
 	      // the port to use locally
 	      int bindport = myPort;
@@ -108,7 +94,7 @@ public class tankgame extends JFrame implements ActionListener
 	      InetSocketAddress bootaddress = new InetSocketAddress(bootaddr,bootport);
 	  
 	      // launch our node!
-	      PastrySetup dt = new PastrySetup(bindport, bootaddress, env);
+	      pSetup = new PastrySetup(bindport, bootaddress, env);
 	    } catch (Exception e) {
 	      // remind user how to use
 	      System.out.println("Usage:"); 
@@ -116,6 +102,17 @@ public class tankgame extends JFrame implements ActionListener
 	      System.out.println("example java rice.tutorial.DistTutorial 9001 pokey.cs.almamater.edu 9001");
 	      throw e; 
 	    }
+	    
+	    if(pSetup != null && pSetup._node != null)
+    	{
+			mp = new MyPanel(currStatus);
+			Thread t = new Thread(mp);
+			this.addKeyListener(mp);
+			this.add(mp);
+			t.start();
+			this.setVisible(true);
+    	}
+	    
 	}
 	
 }

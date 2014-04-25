@@ -12,6 +12,7 @@ import rice.pastry.standard.RandomNodeIdFactory;
 
 public class PastrySetup 
 {
+	public PastryNode _node = null;
 	 
 	public PastrySetup(int bindport, InetSocketAddress bootaddress, Environment env) throws Exception
 	{
@@ -43,5 +44,6 @@ public class PastrySetup
 	    }
 	    
 	    System.out.println("Finished creating new node "+node);
+	    _node = node;
 	}
 }
