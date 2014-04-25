@@ -2,14 +2,13 @@ package org.tank.game;
 
 import javax.swing.*;
 
-import rice.environment.Environment;
+import org.tank.Members.*;
+import org.tank.Model.Model;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.*;
 
 class status {
@@ -21,7 +20,7 @@ class status {
 	}
 }
 
-public class tankgame extends JFrame implements ActionListener
+public class tankgame extends JFrame implements ActionListener, org.tank.Model.Observer
 {
 	private static final long serialVersionUID = 1L;
 	MyPanel mp = null;
@@ -30,6 +29,11 @@ public class tankgame extends JFrame implements ActionListener
 	JMenuItem jmiNew = null;
 	JMenuItem jmiExit = null;
 	JMenuItem jmiJoinCreate = null;
+
+	private int width = 400;
+	private int height = 400;
+	
+	private Model _model;
 	
 	status currStatus = new status();
 
@@ -58,6 +62,9 @@ public class tankgame extends JFrame implements ActionListener
 		this.setSize(500, 500);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setVisible(true);
+		
+		_model = new Model(width, height);
+		_model.addObserver(this);
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -73,35 +80,12 @@ public class tankgame extends JFrame implements ActionListener
 	public void joinCreateGame(int myPort, String bootIp, int bootPort) throws Exception
 	{
 		System.out.println(myPort + "; " + bootIp + "; " + bootPort);
-		 // Loads pastry settings
-	    Environment env = new Environment();
-
-	    // disable the UPnP setting (in case you are testing this on a NATted LAN)
-	    env.getParameters().setString("nat_search_policy","never");
+		 
+		boolean started = _model.setup(myPort, bootIp, bootPort);
 	    
-	    PastrySetup pSetup = null;
-	    try {
-	      // the port to use locally
-	      int bindport = myPort;
-	      
-	      // build the bootaddress from the command line args
-	      InetAddress bootaddr = InetAddress.getByName(bootIp);
-	      int bootport = bootPort;
-	      InetSocketAddress bootaddress = new InetSocketAddress(bootaddr,bootport);
-	  
-	      // launch our node!
-	      pSetup = new PastrySetup(bindport, bootaddress, env, this);
-	    } catch (Exception e) {
-	      // remind user how to use
-	      System.out.println("Usage:"); 
-	      System.out.println("java [-cp FreePastry-<version>.jar] rice.tutorial.lesson3.DistTutorial localbindport bootIP bootPort");
-	      System.out.println("example java rice.tutorial.DistTutorial 9001 pokey.cs.almamater.edu 9001");
-	      throw e; 
-	    }
-	    
-	    if(pSetup != null && pSetup._node != null)
+	    if(started)
     	{
-			mp = new MyPanel(currStatus);
+			mp = new MyPanel(currStatus, _model);
 			Thread t = new Thread(mp);
 			this.addKeyListener(mp);
 			this.add(mp);
@@ -110,21 +94,25 @@ public class tankgame extends JFrame implements ActionListener
     	}
 	    
 	}
+
+	public void update() {
+		// TODO Auto-generated method stub
+		
+	}
 	
 }
 
 
 // my panel
-class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable {
+class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, org.tank.Model.Observer {
 
 	private static final long serialVersionUID = 1L;
 	
 	status myStatus;
-	final static int width = 400;
-	final static int height = 400;
 	Hero hero = null;
-	Vector<EnemyTank> enemyTanks = new Vector<EnemyTank>();
+	ArrayList<EnemyTank> enemyTanks = new ArrayList<EnemyTank>();
 	int enemyNum = 10;
+	private Model _model;
 
 	// three image makes one bomb
 	Image image1, image2, image3 = null;
@@ -133,15 +121,17 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable {
 
 	int mylife = 3;
 
-	public MyPanel(status parentStatus) {
+	public MyPanel(status parentStatus, Model model) {
 
+		_model = model;
+		_model.addObserver(this);
 		myStatus = parentStatus;
 
 		image1 = Toolkit.getDefaultToolkit().getImage(Panel.class.getResource("/bomb_1.gif"));
 		image2 = Toolkit.getDefaultToolkit().getImage(Panel.class.getResource("/bomb_2.gif"));
 		image3 = Toolkit.getDefaultToolkit().getImage(Panel.class.getResource("/bomb_3.gif"));
 
-		hero = new Hero((int) (Math.random() * width),(int) (Math.random() * height));
+		hero = new Hero((int) (Math.random() * _model.getGameWidth()),(int) (Math.random() * _model.getGameHeight()));
 
 		/*for (int i = 0; i < enemyNum; i++) {
 
@@ -152,12 +142,9 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable {
 		}*/
 	}
 	
-	public void addEnemyTank()
+	public void update() 
 	{
-		EnemyTank et = new EnemyTank((int) (Math.random() * width), (int) (Math.random() * height));
-		Thread t = new Thread(et);
-		t.start();
-		enemyTanks.add(et);
+		enemyTanks = _model.getEnemyTanksCopy();
 	}
 
 	public void showinfo(Graphics g) {

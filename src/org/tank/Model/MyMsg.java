@@ -1,4 +1,4 @@
-package org.tank.game;
+package org.tank.Model;
 /*******************************************************************************
 
 "FreePastry" Peer-to-Peer Application Development Substrate
