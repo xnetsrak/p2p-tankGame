@@ -16,9 +16,11 @@ public class PastryApp implements Application
 	   * node the message is intended for.
 	   */
 	  protected Endpoint endpoint;
+	  private tankgame tGame;
 
-	  public PastryApp(Node node) 
+	  public PastryApp(Node node, tankgame tGame) 
 	  {
+		  this.tGame = tGame;
 	    // We are only going to use one instance of this application on each PastryNode
 	    this.endpoint = node.buildEndpoint(this, "myinstance");
 	    
@@ -33,17 +35,17 @@ public class PastryApp implements Application
 	   */
 	  public void routeMyMsg(Id id) {
 	    System.out.println(this+" sending to "+id);    
-	    Message msg = new MyMsg(endpoint.getId(), id);
+	    Message msg = new MyMsg(endpoint.getId(), id, "");
 	    endpoint.route(id, msg, null);
 	  }
 	  
 	  /**
 	   * Called to directly send a message to the nh
 	   */
-	  public void routeMyMsgDirect(NodeHandle nh) {
+	  public void routeMyMsgDirect(NodeHandle nh, MyMsg msg1) {
 	    System.out.println(this+" sending direct to "+nh);    
-	    Message msg = new MyMsg(endpoint.getId(), nh.getId());
-	    endpoint.route(null, msg, nh);
+	    //Message msg = new MyMsg(endpoint.getId(), nh.getId());
+	    endpoint.route(null, msg1, nh);
 	  }
 	    
 	  /**
@@ -51,6 +53,14 @@ public class PastryApp implements Application
 	   */
 	  public void deliver(Id id, Message message) {
 	    System.out.println(this+" received "+message);
+	    MyMsg recivedMsg = (MyMsg)message;
+	    String msgType = recivedMsg.getType();
+	    
+	    if(msgType.equals("join"))
+	    {
+	    	tGame.mp.addEnemyTank();
+	    }
+	    
 	  }
 
 	  /**

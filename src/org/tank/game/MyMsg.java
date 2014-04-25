@@ -42,34 +42,23 @@ advised of the possibility of such damage.
 import rice.p2p.commonapi.Id;
 import rice.p2p.commonapi.Message;
 
-/**
- * An example message.
- * 
- * @author Jeff Hoye
- */
 public class MyMsg implements Message {
-  /**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
-/**
-   * Where the Message came from.
-   */
-  Id from;
-  /**
-   * Where the Message is going.
-   */
-  Id to;
+	private String type = "";
+
+  Id from; /*Where the Message came from.*/
+  Id to; /* Where the Message is going.*/
   
-  /**
-   * Constructor.
-   */
-  public MyMsg(Id from, Id to) {
+  public MyMsg(Id from, Id to, String type) {
     this.from = from;
     this.to = to;
+    this.type = type;
   }
   
-  public String toString() {
+
+
+public String toString() {
     return "MyMsg from "+from+" to "+to;
   }
 
@@ -79,4 +68,12 @@ public class MyMsg implements Message {
   public int getPriority() {
     return Message.LOW_PRIORITY;
   }
+  
+  public String getType() {
+	return type;
+}
+
+public void setType(String type) {
+	this.type = type;
+}
 }

@@ -63,15 +63,11 @@ public class tankgame extends JFrame implements ActionListener
 	public void actionPerformed(ActionEvent e) {
 
 		if (e.getActionCommand().equals("exit")) {
-
 			System.exit(0);
 		}
-		
 		if (e.getActionCommand().equals("joincreate")) {
-
 			new CreateJoinPastryDialog(this).setVisible(true);
 		}
-
 	}
 	
 	public void joinCreateGame(int myPort, String bootIp, int bootPort) throws Exception
@@ -94,7 +90,7 @@ public class tankgame extends JFrame implements ActionListener
 	      InetSocketAddress bootaddress = new InetSocketAddress(bootaddr,bootport);
 	  
 	      // launch our node!
-	      pSetup = new PastrySetup(bindport, bootaddress, env);
+	      pSetup = new PastrySetup(bindport, bootaddress, env, this);
 	    } catch (Exception e) {
 	      // remind user how to use
 	      System.out.println("Usage:"); 
@@ -147,13 +143,21 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable {
 
 		hero = new Hero((int) (Math.random() * width),(int) (Math.random() * height));
 
-		for (int i = 0; i < enemyNum; i++) {
+		/*for (int i = 0; i < enemyNum; i++) {
 
 			EnemyTank et = new EnemyTank((int) (Math.random() * width), (int) (Math.random() * height));
 			Thread t = new Thread(et);
 			t.start();
 			enemyTanks.add(et);
-		}
+		}*/
+	}
+	
+	public void addEnemyTank()
+	{
+		EnemyTank et = new EnemyTank((int) (Math.random() * width), (int) (Math.random() * height));
+		Thread t = new Thread(et);
+		t.start();
+		enemyTanks.add(et);
 	}
 
 	public void showinfo(Graphics g) {
