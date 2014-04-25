@@ -1,10 +1,15 @@
 package org.tank.game;
 
 import javax.swing.*;
+
+import rice.environment.Environment;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.*;
 
 class status {
@@ -24,6 +29,7 @@ public class tankgame extends JFrame implements ActionListener
 	JMenu jMenu = null;
 	JMenuItem jmiNew = null;
 	JMenuItem jmiExit = null;
+	JMenuItem jmiJoinCreate = null;
 	
 	status currStatus = new status();
 
@@ -35,16 +41,22 @@ public class tankgame extends JFrame implements ActionListener
 
 		jmiNew = new JMenuItem("start new game");
 		jmiExit = new JMenuItem("exit");
+		jmiJoinCreate = new JMenuItem("join/create game");
 
 		jmiExit.addActionListener(this);
 		jmiExit.setActionCommand("exit");
 
-		jMenu.add(jmiNew);
-		jMenu.add(jmiExit);
-		jMenuBar.add(jMenu);
-
 		jmiNew.addActionListener(this);
 		jmiNew.setActionCommand("new");
+		
+		jmiJoinCreate.addActionListener(this);
+		jmiJoinCreate.setActionCommand("joincreate");
+
+		jMenu.add(jmiNew);
+		jMenu.add(jmiExit);
+		jMenu.add(jmiJoinCreate);
+		jMenuBar.add(jMenu);
+
 		this.setJMenuBar(jMenuBar);
 
 		this.setTitle("P2P tankGame");
@@ -69,10 +81,45 @@ public class tankgame extends JFrame implements ActionListener
 
 			System.exit(0);
 		}
+		
+		if (e.getActionCommand().equals("joincreate")) {
+
+			new CreateJoinPastryDialog(this).setVisible(true);
+		}
 
 	}
+	
+	public void joinCreateGame(int myPort, String bootIp, int bootPort) throws Exception
+	{
+		System.out.println(myPort + "; " + bootIp + "; " + bootPort);
+		 // Loads pastry settings
+	    Environment env = new Environment();
 
+	    // disable the UPnP setting (in case you are testing this on a NATted LAN)
+	    env.getParameters().setString("nat_search_policy","never");
+	    
+	    try {
+	      // the port to use locally
+	      int bindport = myPort;
+	      
+	      // build the bootaddress from the command line args
+	      InetAddress bootaddr = InetAddress.getByName(bootIp);
+	      int bootport = bootPort;
+	      InetSocketAddress bootaddress = new InetSocketAddress(bootaddr,bootport);
+	  
+	      // launch our node!
+	      PastrySetup dt = new PastrySetup(bindport, bootaddress, env);
+	    } catch (Exception e) {
+	      // remind user how to use
+	      System.out.println("Usage:"); 
+	      System.out.println("java [-cp FreePastry-<version>.jar] rice.tutorial.lesson3.DistTutorial localbindport bootIP bootPort");
+	      System.out.println("example java rice.tutorial.DistTutorial 9001 pokey.cs.almamater.edu 9001");
+	      throw e; 
+	    }
+	}
+	
 }
+
 
 // my panel
 class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable {
