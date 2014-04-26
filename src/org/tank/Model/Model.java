@@ -1,10 +1,14 @@
 package org.tank.Model;
 
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+
 import org.tank.Members.EnemyTank;
+import org.tank.Members.Hero;
+
 import rice.environment.Environment;
 import rice.pastry.NodeHandle;
 import rice.pastry.NodeIdFactory;
@@ -24,11 +28,14 @@ public class Model
 	private ArrayList<EnemyTank> _enemyTanks = new ArrayList<EnemyTank>();
 	private int gameWidth;
 	private int gameHeight;
+	private Hero _hero;
 	
 	public Model(int gameWidth, int gameHeight)
 	{
 		this.gameWidth = gameWidth;
 		this.gameHeight = gameHeight;
+		
+		setHero(new Hero((int) (Math.random() * getGameWidth()),(int) (Math.random() * getGameHeight())));
 	}
 	
 	public boolean setup(int bindPort, String bootAddress, int bootPort) throws Exception
@@ -114,6 +121,37 @@ public class Model
 		notifyObserver();
 	}	
 	
+	public void changeHeroDirection(int direction)
+	{
+		switch (direction) {
+		case 0:
+			_hero.setDirect(0);
+			_hero.setY(_hero.getY() - _hero.getSpeed());
+			break;
+		case 1:
+			_hero.setDirect(1);
+			_hero.setX(_hero.getX() + _hero.getSpeed());
+			break;
+		case 2:
+			_hero.setDirect(2);
+			_hero.setY(_hero.getY() + _hero.getSpeed());
+			break;
+		case 3:
+			_hero.setDirect(3);
+			_hero.setX(_hero.getX() - _hero.getSpeed());
+			break;
+		default:
+			break;
+		}
+		
+	}
+	
+	public void shotEnemy()
+	{
+		if (this._hero.s.size() < 5)
+			_hero.shotEnemy();
+	}
+	
 	public void addObserver(Observer obs)
 	{
 		observers.add(obs);
@@ -136,4 +174,8 @@ public class Model
 	public void setGameHeight(int gameHeight) { this.gameHeight = gameHeight; }
 
 	public ArrayList<EnemyTank> getEnemyTanksCopy() { return new ArrayList<EnemyTank>(_enemyTanks); }
+
+	public Hero getHero() { return _hero; }
+
+	public void setHero(Hero _hero) { this._hero = _hero; }
 }

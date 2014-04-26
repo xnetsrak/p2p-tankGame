@@ -109,7 +109,7 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 	private static final long serialVersionUID = 1L;
 	
 	status myStatus;
-	Hero hero = null;
+	private Hero _hero = null;
 	ArrayList<EnemyTank> enemyTanks = new ArrayList<EnemyTank>();
 	int enemyNum = 10;
 	private Model _model;
@@ -131,8 +131,7 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 		image2 = Toolkit.getDefaultToolkit().getImage(Panel.class.getResource("/bomb_2.gif"));
 		image3 = Toolkit.getDefaultToolkit().getImage(Panel.class.getResource("/bomb_3.gif"));
 
-		hero = new Hero((int) (Math.random() * _model.getGameWidth()),(int) (Math.random() * _model.getGameHeight()));
-
+		_hero = _model.getHero();
 		/*for (int i = 0; i < enemyNum; i++) {
 
 			EnemyTank et = new EnemyTank((int) (Math.random() * width), (int) (Math.random() * height));
@@ -145,6 +144,8 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 	public void update() 
 	{
 		enemyTanks = _model.getEnemyTanksCopy();
+		_hero = _model.getHero();
+		this.repaint();
 	}
 
 	public void showinfo(Graphics g) {
@@ -164,16 +165,16 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 		this.showinfo(g);
 
 		if (mylife > 0)
-			this.drawTank(hero.getX(), hero.getY(), g, hero.getDirect(), 0);
+			this.drawTank(_hero.getX(), _hero.getY(), g, _hero.getDirect(), 0);
 
-		for (int i = 1; i <= hero.s.size(); i++) {
+		for (int i = 1; i <= _hero.s.size(); i++) {
 
-			if (hero.s.get(i - 1).isLive) {
+			if (_hero.s.get(i - 1).isLive) {
 				g.setColor(Color.red);
-				g.draw3DRect(hero.s.get(i - 1).x, hero.s.get(i - 1).y, 1, 1,
+				g.draw3DRect(_hero.s.get(i - 1).x, _hero.s.get(i - 1).y, 1, 1,
 						false);
 			} else {
-				hero.s.remove(i - 1);
+				_hero.s.remove(i - 1);
 				i--;
 			}
 		}
@@ -322,34 +323,18 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 
 	public void keyPressed(KeyEvent e) {
 
-		if ((e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_S) && hero.y < 280) 
-		{
-			hero.setDirect(2);
-			hero.setY(hero.getY() + hero.getSpeed());
-		}
-
-		else if ((e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_W) && hero.y > 0) 
-		{
-			hero.setDirect(0);
-			hero.setY(hero.getY() - hero.getSpeed());
-		}
-
-		else if ((e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_A) && hero.x > 0) 
-		{
-			hero.setDirect(3);
-			hero.setX(hero.getX() - hero.getSpeed());
-		}
-		else if ((e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == KeyEvent.VK_D) && hero.x < 380) 
-		{
-			hero.setDirect(1);
-			hero.setX(hero.getX() + hero.getSpeed());
-		}
-
-		if (e.getKeyCode() == KeyEvent.VK_J) {
-			if (this.hero.s.size() < 5) {
-				hero.shotEnemy();
-			}
-		}
+		if ((e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_S) && _hero.y < 280) 
+			_model.changeHeroDirection(2);
+		else if ((e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_W) && _hero.y > 0) 
+			_model.changeHeroDirection(0);
+		else if ((e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_A) && _hero.x > 0) 
+			_model.changeHeroDirection(3);
+		else if ((e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == KeyEvent.VK_D) && _hero.x < 380) 
+			_model.changeHeroDirection(1);
+		
+		if (e.getKeyCode() == KeyEvent.VK_J)
+			_model.shotEnemy();
+		
 		this.repaint();
 	}
 
@@ -371,15 +356,15 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 			}
 
 			for (int i = 0; i < enemyTanks.size(); i++) {
-				for (int j = 0; j < hero.s.size(); j++)
-					this.hittank(hero.s.get(j), enemyTanks.get(i));
+				for (int j = 0; j < _hero.s.size(); j++)
+					this.hittank(_hero.s.get(j), enemyTanks.get(i));
 			}
 
 			for (int i = 0; i < enemyTanks.size(); i++) {
 
 				EnemyTank t = enemyTanks.get(i);
 				for (int j = 0; j < t.s.size(); j++)
-					this.hitmytank(t.s.get(j), hero);
+					this.hitmytank(t.s.get(j), _hero);
 			}
 
 			this.repaint();
