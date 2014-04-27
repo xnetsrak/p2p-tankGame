@@ -64,7 +64,7 @@ public class EnemyTank extends Tank implements Runnable {
 				for (int i = 0; i < 30; i++) {
 
 					p = randomnumber.nextInt(100);
-					if (p == 0 && this.s.size() < 3) {
+					if (p < 40 && this.s.size() < 3) {
 						this.shotEnemy();
 					}
 					if (y > 0)
@@ -81,7 +81,7 @@ public class EnemyTank extends Tank implements Runnable {
 
 					p = randomnumber.nextInt(100);
 
-					if (p == 0 && this.s.size() < 3)
+					if (p < 40 && this.s.size() < 3)
 						this.shotEnemy();
 					if (x < 380)
 						this.x += this.speed;
@@ -95,7 +95,7 @@ public class EnemyTank extends Tank implements Runnable {
 			case 2:
 				for (int i = 0; i < 30; i++) {
 					p = randomnumber.nextInt(100);
-					if (p == 0 && this.s.size() < 3)
+					if (p < 40 && this.s.size() < 3)
 						this.shotEnemy();
 					if (y < 280)
 						this.y += this.speed;
@@ -109,7 +109,7 @@ public class EnemyTank extends Tank implements Runnable {
 			case 3:
 				for (int i = 0; i < 30; i++) {
 					p = randomnumber.nextInt(100);
-					if (p == 0 && this.s.size() < 3)
+					if (p < 40 && this.s.size() < 3)
 						this.shotEnemy();
 					if (x > 0)
 						this.x -= this.speed;

@@ -1,14 +1,15 @@
 package org.tank.Model;
 
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 
+import org.tank.Members.Bomb;
 import org.tank.Members.EnemyTank;
 import org.tank.Members.Hero;
-
+import org.tank.Members.Shot;
+import org.tank.Members.Tank;
 import rice.environment.Environment;
 import rice.pastry.NodeHandle;
 import rice.pastry.NodeIdFactory;
@@ -18,6 +19,10 @@ import rice.pastry.leafset.LeafSet;
 import rice.pastry.socket.SocketPastryNodeFactory;
 import rice.pastry.standard.RandomNodeIdFactory;
 
+class status {
+	boolean change;
+	public status() { this.change = false; }
+}
 
 public class Model 
 {
@@ -26,9 +31,13 @@ public class Model
 	private org.tank.Model.PastryApp _pastryApp;
 	
 	private ArrayList<EnemyTank> _enemyTanks = new ArrayList<EnemyTank>();
+	private ArrayList<Bomb> _bombs = new ArrayList<Bomb>();
+	private int myPoints = 0;
 	private int gameWidth;
 	private int gameHeight;
 	private Hero _hero;
+	
+	private status currStatus = new status();
 	
 	public Model(int gameWidth, int gameHeight)
 	{
@@ -36,6 +45,9 @@ public class Model
 		this.gameHeight = gameHeight;
 		
 		setHero(new Hero((int) (Math.random() * getGameWidth()),(int) (Math.random() * getGameHeight())));
+		
+		Thread t = new Thread(new RunThread(), "RunThread");
+		t.start();
 	}
 	
 	public boolean setup(int bindPort, String bootAddress, int bootPort) throws Exception
@@ -152,6 +164,94 @@ public class Model
 			_hero.shotEnemy();
 	}
 	
+	// function to judge whether a bullet has shot the tank
+	public void hittank(Shot s, Tank enemyTank) {
+		boolean tankHit = false;
+		
+		switch (enemyTank.getDirect()) 
+		{
+			case 0:
+			case 2:
+				if (s.x >= enemyTank.x && s.x <= enemyTank.x + 20 && s.y >= enemyTank.y && s.y <= enemyTank.y + 30)
+					tankHit = true;
+				break;
+			case 1:
+			case 3:
+				if (s.x > enemyTank.x && s.x < enemyTank.x + 30 && s.y > enemyTank.y && s.y < enemyTank.y + 20)
+					tankHit = true;
+				
+		}
+		if(tankHit)
+		{
+			s.isLive = false;
+			//enemyTank.isLive = false;
+
+			Bomb newbomb = new Bomb(enemyTank.getX(), enemyTank.getY());
+			_bombs.add(newbomb);
+			myPoints++;
+			notifyObserver();
+		}
+	}
+
+	public void hitmytank(Shot s, Tank et) {
+		switch (et.getDirect()) {
+		case 0:
+		case 2:
+			if (s.x >= et.x && s.x <= et.x + 20 && s.y >= et.y && s.y <= et.y + 30) {
+				s.isLive = false;
+				myPoints--;
+
+				// create a bomb
+				Bomb newbomb = new Bomb(et.getX(), et.getY());
+				_bombs.add(newbomb);
+				notifyObserver();
+			}
+			break;
+
+		case 1:
+		case 3:
+
+			if (s.x > et.x && s.x < et.x + 30 && s.y > et.y && s.y < et.y + 20) {
+				s.isLive = false;
+				setMyPoints(getMyPoints() - 1);
+
+				// create a bomb
+				Bomb newbomb = new Bomb(et.getX(), et.getY());
+				_bombs.add(newbomb);
+				notifyObserver();
+			}
+		}
+	}
+	
+	class RunThread implements Runnable
+	{
+		public void run() {
+			
+			while (!currStatus.change) {
+
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				for (int i = 0; i < _enemyTanks.size(); i++) {
+					for (int j = 0; j < _hero.s.size(); j++)
+						hittank(_hero.s.get(j), _enemyTanks.get(i));
+				}
+
+				for (int i = 0; i < _enemyTanks.size(); i++) {
+
+					EnemyTank t = _enemyTanks.get(i);
+					for (int j = 0; j < t.s.size(); j++)
+						hitmytank(t.s.get(j), _hero);
+				}
+
+			}
+		}
+	}
+	
+	
 	public void addObserver(Observer obs)
 	{
 		observers.add(obs);
@@ -173,9 +273,17 @@ public class Model
 
 	public void setGameHeight(int gameHeight) { this.gameHeight = gameHeight; }
 
-	public ArrayList<EnemyTank> getEnemyTanksCopy() { return new ArrayList<EnemyTank>(_enemyTanks); }
+	public ArrayList<EnemyTank> getEnemyTanks() { return _enemyTanks; }
 
 	public Hero getHero() { return _hero; }
 
 	public void setHero(Hero _hero) { this._hero = _hero; }
+
+	public ArrayList<Bomb> getBombs() { return _bombs; }
+
+	public void setBombs(ArrayList<Bomb> _bombs) { this._bombs = _bombs; }
+
+	public int getMyPoints() { return myPoints; }
+
+	public void setMyPoints(int myPoints) { this.myPoints = myPoints; }
 }

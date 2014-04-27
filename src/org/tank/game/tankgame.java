@@ -11,15 +11,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.*;
 
-class status {
-
-	boolean change;
-
-	status() {
-		this.change = false;
-	}
-}
-
 public class tankgame extends JFrame implements ActionListener, org.tank.Model.Observer
 {
 	private static final long serialVersionUID = 1L;
@@ -34,8 +25,6 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 	private int height = 400;
 	
 	private Model _model;
-	
-	status currStatus = new status();
 
 	public tankgame() {
 
@@ -52,8 +41,8 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 		jmiJoinCreate.addActionListener(this);
 		jmiJoinCreate.setActionCommand("joincreate");
 
-		jMenu.add(jmiExit);
 		jMenu.add(jmiJoinCreate);
+		jMenu.add(jmiExit);
 		jMenuBar.add(jMenu);
 
 		this.setJMenuBar(jMenuBar);
@@ -85,11 +74,11 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 	    
 	    if(started)
     	{
-			mp = new MyPanel(currStatus, _model);
+			mp = new MyPanel(_model);
 			Thread t = new Thread(mp);
+			t.start();
 			this.addKeyListener(mp);
 			this.add(mp);
-			t.start();
 			this.setVisible(true);
     	}
 	    
@@ -104,28 +93,25 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 
 
 // my panel
-class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, org.tank.Model.Observer {
+class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  org.tank.Model.Observer {
 
 	private static final long serialVersionUID = 1L;
-	
-	status myStatus;
+	private ArrayList<EnemyTank> enemyTanks = new ArrayList<EnemyTank>();
 	private Hero _hero = null;
-	ArrayList<EnemyTank> enemyTanks = new ArrayList<EnemyTank>();
+	private ArrayList<Bomb> _bombs = new ArrayList<Bomb>();
+
 	int enemyNum = 10;
 	private Model _model;
 
 	// three image makes one bomb
 	Image image1, image2, image3 = null;
 
-	Vector<Bomb> bombs = new Vector<Bomb>();
+	int _myPoints = 0;
 
-	int mylife = 3;
-
-	public MyPanel(status parentStatus, Model model) {
+	public MyPanel(Model model) {
 
 		_model = model;
 		_model.addObserver(this);
-		myStatus = parentStatus;
 
 		image1 = Toolkit.getDefaultToolkit().getImage(Panel.class.getResource("/bomb_1.gif"));
 		image2 = Toolkit.getDefaultToolkit().getImage(Panel.class.getResource("/bomb_2.gif"));
@@ -143,8 +129,10 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 	
 	public void update() 
 	{
-		enemyTanks = _model.getEnemyTanksCopy();
+		enemyTanks = _model.getEnemyTanks();
 		_hero = _model.getHero();
+		_bombs = _model.getBombs();
+		_myPoints = _model.getMyPoints();
 		this.repaint();
 	}
 
@@ -155,7 +143,7 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 		g.drawString(enemyNum + " ", 45, 340);
 		this.drawTank(100, 320, g, 0, 0);
 		g.setColor(Color.black);
-		g.drawString(mylife + " ", 130, 340);
+		g.drawString(_myPoints + " ", 130, 340);
 	}
 
 	public void paint(Graphics g) 
@@ -164,8 +152,8 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 		super.paint(g);
 		this.showinfo(g);
 
-		if (mylife > 0)
-			this.drawTank(_hero.getX(), _hero.getY(), g, _hero.getDirect(), 0);
+		//if (_myPoints > 0)
+		this.drawTank(_hero.getX(), _hero.getY(), g, _hero.getDirect(), 0);
 
 		for (int i = 1; i <= _hero.s.size(); i++) {
 
@@ -199,9 +187,9 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 			}
 		}
 
-		for (int i = 0; i < bombs.size(); i++) {
+		for (int i = 0; i < _bombs.size(); i++) {
 
-			Bomb b = bombs.get(i);
+			Bomb b = _bombs.get(i);
 
 			if (b.life > 6)
 				g.drawImage(image1, b.x, b.y, 30, 30, this);
@@ -214,65 +202,8 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 
 			b.lifeDown();
 			if (b.life == 0) {
-				bombs.remove(i);
+				_bombs.remove(i);
 				i--;
-			}
-		}
-	}
-
-	// function to judge whether a bullet has shot the tank
-	public void hittank(Shot s, Tank enemyTank) {
-		boolean tankHit = false;
-		
-		switch (enemyTank.getDirect()) 
-		{
-			case 0:
-			case 2:
-				if (s.x >= enemyTank.x && s.x <= enemyTank.x + 20 && s.y >= enemyTank.y && s.y <= enemyTank.y + 30)
-					tankHit = true;
-				break;
-			case 1:
-			case 3:
-				if (s.x > enemyTank.x && s.x < enemyTank.x + 30 && s.y > enemyTank.y && s.y < enemyTank.y + 20)
-					tankHit = true;
-				
-		}
-		if(tankHit)
-		{
-			s.isLive = false;
-			enemyTank.isLive = false;
-			enemyNum--;
-
-			Bomb newbomb = new Bomb(enemyTank.getX(), enemyTank.getY());
-			bombs.add(newbomb);
-			mylife++;
-		}
-	}
-
-	public void hitmytank(Shot s, Tank et) {
-		switch (et.getDirect()) {
-		case 0:
-		case 2:
-			if (s.x >= et.x && s.x <= et.x + 20 && s.y >= et.y && s.y <= et.y + 30) {
-				s.isLive = false;
-				mylife--;
-
-				// create a bomb
-				Bomb newbomb = new Bomb(et.getX(), et.getY());
-				bombs.add(newbomb);
-			}
-			break;
-
-		case 1:
-		case 3:
-
-			if (s.x > et.x && s.x < et.x + 30 && s.y > et.y && s.y < et.y + 20) {
-				s.isLive = false;
-				mylife--;
-
-				// create a bomb
-				Bomb newbomb = new Bomb(et.getX(), et.getY());
-				bombs.add(newbomb);
 			}
 		}
 	}
@@ -346,31 +277,20 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable, or
 	}
 
 	public void run() {
-
-		while (!this.myStatus.change) {
+		
+		while (true) {
 
 			try {
-				Thread.sleep(50);
+				Thread.sleep(30);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-
-			for (int i = 0; i < enemyTanks.size(); i++) {
-				for (int j = 0; j < _hero.s.size(); j++)
-					this.hittank(_hero.s.get(j), enemyTanks.get(i));
-			}
-
-			for (int i = 0; i < enemyTanks.size(); i++) {
-
-				EnemyTank t = enemyTanks.get(i);
-				for (int j = 0; j < t.s.size(); j++)
-					this.hitmytank(t.s.get(j), _hero);
-			}
-
 			this.repaint();
 
 		}
+		
 	}
+
 }
 
 
