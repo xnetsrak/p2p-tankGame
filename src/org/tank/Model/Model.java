@@ -158,6 +158,13 @@ public class Model
 			et.updatePosistion(updateMsg.x, updateMsg.y, updateMsg.direction);
 		notifyObserver();
 	}
+	public void tankShotMsg(ShotMsg shotMsg)
+	{
+		EnemyTank et = _enemyTanks.get(shotMsg.from);
+		if(et != null)
+			et.shotEnemy();
+		notifyObserver();
+	}
 		
 	public void changeHeroDirection(int direction)
 	{
@@ -207,6 +214,22 @@ public class Model
 	
 	public void shotEnemy()
 	{
+		LeafSet leafSet = _pastryNode.getLeafSet();
+	    ArrayList<rice.p2p.commonapi.Id> sentTo = new ArrayList<rice.p2p.commonapi.Id>();
+	    for (int i=-leafSet.ccwSize(); i<=leafSet.cwSize(); i++) {
+	      if (i != 0) { // don't send to self
+	        // select the item
+	        NodeHandle nh = leafSet.get(i);
+	        if(!sentTo.contains(nh.getId())) {
+	        	
+	        	ShotMsg sm = new ShotMsg(_pastryApp.endpoint.getId(), nh.getId());
+	        	_pastryApp.routeMyMsgDirect(nh, sm);  
+	        	
+	        }
+	        sentTo.add(nh.getId());
+	      }
+	    }
+	    
 		if (this._hero.s.size() < 5)
 			_hero.shotEnemy();
 	}

@@ -52,6 +52,10 @@ public class PastryApp implements Application
 	    {
 	    	_model.tankJoinResponse((JoinResponseMsg)recivedMsg);
 	    }
+	    else if(msgType.equals("ShotMsg"))
+	    {
+	    	_model.tankShotMsg((ShotMsg)recivedMsg);
+	    }
 	    
 	  }
 
