@@ -7,10 +7,8 @@ public class Hero extends Tank {
 
 	public Vector<Shot> s = new Vector<Shot>();
 
-	public Hero(int x, int y) {
-		super(x, y);
-		this.x = 0;
-		this.y = 100;
+	public Hero(int x, int y, int w) {
+		super(x, y, w);
 	}
 
 	public void shotEnemy() {

@@ -24,27 +24,34 @@ public class PastryApp implements Application
 	  }
 
 	  /* Called to route a message to the id */
-	  public void routeMyMsg(Id id) {
-	    System.out.println(this+" sending to "+id);    
-	    Message msg = new MyMsg(endpoint.getId(), id, "");
-	    endpoint.route(id, msg, null);
+	  public void routeMyMsg(Id id,  MyMsg msg1) {
+	    //System.out.println(this+" sending to "+id);    
+	    endpoint.route(id, msg1, null);
 	  }
 	  
 	  /* Called to directly send a message to the nh */
 	  public void routeMyMsgDirect(NodeHandle nh, MyMsg msg1) {
-	    System.out.println(this+" sending direct to "+nh);    
-	    //Message msg = new MyMsg(endpoint.getId(), nh.getId());
+	    //System.out.println(this+" sending direct to "+nh);    
 	    endpoint.route(null, msg1, nh);
 	  }
 	    
 	  /* Called when we receive a message. */
 	  public void deliver(Id id, Message message) {
-	    System.out.println(this+" received "+message);
+	    //System.out.println(this+" received "+message);
 	    MyMsg recivedMsg = (MyMsg)message;
 	    String msgType = recivedMsg.getType();
 	    
-	    if(msgType.equals("join"))
-	    	_model.tankJoin();
+	    if(msgType.equals("Join")) {
+	    	_model.tankJoin((JoinMsg)recivedMsg);
+	    }
+	    else if(msgType.equals("PosUpdate"))
+	    {
+	    	_model.enemyTankPositionUpdate((TankPositionUpdateMsg)recivedMsg);
+	    }
+	    else if(msgType.equals("JoinResponse"))
+	    {
+	    	_model.tankJoinResponse((JoinResponseMsg)recivedMsg);
+	    }
 	    
 	  }
 

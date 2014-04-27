@@ -4,13 +4,17 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Random;
 
 import org.tank.Members.Bomb;
 import org.tank.Members.EnemyTank;
 import org.tank.Members.Hero;
 import org.tank.Members.Shot;
 import org.tank.Members.Tank;
+
 import rice.environment.Environment;
+import rice.p2p.commonapi.Id;
 import rice.pastry.NodeHandle;
 import rice.pastry.NodeIdFactory;
 import rice.pastry.PastryNode;
@@ -30,12 +34,13 @@ public class Model
 	private PastryNode _pastryNode;
 	private org.tank.Model.PastryApp _pastryApp;
 	
-	private ArrayList<EnemyTank> _enemyTanks = new ArrayList<EnemyTank>();
+	private HashMap<Id,EnemyTank> _enemyTanks = new HashMap<Id,EnemyTank>();
 	private ArrayList<Bomb> _bombs = new ArrayList<Bomb>();
 	private int myPoints = 0;
 	private int gameWidth;
 	private int gameHeight;
 	private Hero _hero;
+	private Random random = new Random();
 	
 	private status currStatus = new status();
 	
@@ -44,7 +49,7 @@ public class Model
 		this.gameWidth = gameWidth;
 		this.gameHeight = gameHeight;
 		
-		setHero(new Hero((int) (Math.random() * getGameWidth()),(int) (Math.random() * getGameHeight())));
+		_hero = new Hero((int) (Math.random() * getGameWidth()),(int) (Math.random() * getGameHeight()), random.nextInt(4));
 		
 		Thread t = new Thread(new RunThread(), "RunThread");
 		t.start();
@@ -79,7 +84,7 @@ public class Model
 		    _pastryNode = node;
 		    
 		    // construct a new MyApp
-		    org.tank.Model.PastryApp app = new org.tank.Model.PastryApp(node, this);    
+		    PastryApp app = new PastryApp(node, this);    
 		    _pastryApp = app;
 		    
 		    node.boot(bootaddress);
@@ -89,7 +94,6 @@ public class Model
 		      while(!node.isReady() && !node.joinFailed()) {
 		        // delay so we don't busy-wait
 		        node.wait(500);
-		        
 		        // abort if can't join
 		        if (node.joinFailed()) {
 		          throw new IOException("Could not join the FreePastry ring.  Reason:"+node.joinFailedReason()); 
@@ -115,8 +119,11 @@ public class Model
 	      if (i != 0) { // don't send to self
 	        // select the item
 	        NodeHandle nh = leafSet.get(i);
-	        if(!sentTo.contains(nh.getId()))
-	        	_pastryApp.routeMyMsgDirect(nh, new MyMsg(_pastryApp.endpoint.getId(), nh.getId(), "join"));   
+	        if(!sentTo.contains(nh.getId())) {
+	        	JoinMsg jm = new JoinMsg(_pastryApp.endpoint.getId(), nh.getId());
+	        	jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
+	        	_pastryApp.routeMyMsgDirect(nh, jm);  
+	        }
 	        sentTo.add(nh.getId());
 	      }
 	    }
@@ -124,15 +131,34 @@ public class Model
 	    return _pastryNode != null && _pastryApp != null;
 	}
 	
-	public void tankJoin()
+	public void tankJoin(JoinMsg joinMsg)
 	{
-		EnemyTank et = new EnemyTank((int) (Math.random() * gameWidth), (int) (Math.random() * gameHeight));
-		Thread t = new Thread(et);
-		t.start();
-		_enemyTanks.add(et);
+		if(_enemyTanks.get(joinMsg.from) == null) {
+			EnemyTank et = new EnemyTank(joinMsg.x, joinMsg.y, joinMsg.direction);
+			_enemyTanks.put(joinMsg.from, et);
+		}
 		notifyObserver();
+		
+		JoinResponseMsg jm = new JoinResponseMsg(_pastryApp.endpoint.getId(), joinMsg.from);
+		jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
+		_pastryApp.routeMyMsg(joinMsg.from, jm);
 	}	
-	
+	public void tankJoinResponse(JoinResponseMsg joinMsg)
+	{
+		if(_enemyTanks.get(joinMsg.from) == null) {
+			EnemyTank et = new EnemyTank(joinMsg.x, joinMsg.y, joinMsg.direction);
+			_enemyTanks.put(joinMsg.from, et);
+		}
+		notifyObserver();
+	}
+	public void enemyTankPositionUpdate(TankPositionUpdateMsg updateMsg)
+	{
+		EnemyTank et = _enemyTanks.get(updateMsg.from);
+		if(et != null)
+			et.updatePosistion(updateMsg.x, updateMsg.y, updateMsg.direction);
+		notifyObserver();
+	}
+		
 	public void changeHeroDirection(int direction)
 	{
 		switch (direction) {
@@ -155,7 +181,28 @@ public class Model
 		default:
 			break;
 		}
+		sendPosistionUpdate();
 		
+	}
+	
+	public void sendPosistionUpdate()
+	{
+		LeafSet leafSet = _pastryNode.getLeafSet();
+	    ArrayList<rice.p2p.commonapi.Id> sentTo = new ArrayList<rice.p2p.commonapi.Id>();
+	    for (int i=-leafSet.ccwSize(); i<=leafSet.cwSize(); i++) {
+	      if (i != 0) { // don't send to self
+	        // select the item
+	        NodeHandle nh = leafSet.get(i);
+	        if(!sentTo.contains(nh.getId())) {
+	        	
+	        	TankPositionUpdateMsg jm = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId());
+	        	jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
+	        	_pastryApp.routeMyMsgDirect(nh, jm);  
+	        	
+	        }
+	        sentTo.add(nh.getId());
+	      }
+	    }
 	}
 	
 	public void shotEnemy()
@@ -235,14 +282,15 @@ public class Model
 					e.printStackTrace();
 				}
 
-				for (int i = 0; i < _enemyTanks.size(); i++) {
+				for(Id id : _enemyTanks.keySet())
+				{
 					for (int j = 0; j < _hero.s.size(); j++)
-						hittank(_hero.s.get(j), _enemyTanks.get(i));
+						hittank(_hero.s.get(j), _enemyTanks.get(id));
 				}
 
-				for (int i = 0; i < _enemyTanks.size(); i++) {
-
-					EnemyTank t = _enemyTanks.get(i);
+				for(Id id : _enemyTanks.keySet())
+				{
+					EnemyTank t = _enemyTanks.get(id);
 					for (int j = 0; j < t.s.size(); j++)
 						hitmytank(t.s.get(j), _hero);
 				}
@@ -273,7 +321,7 @@ public class Model
 
 	public void setGameHeight(int gameHeight) { this.gameHeight = gameHeight; }
 
-	public ArrayList<EnemyTank> getEnemyTanks() { return _enemyTanks; }
+	public HashMap<Id,EnemyTank> getEnemyTanks() { return _enemyTanks; }
 
 	public Hero getHero() { return _hero; }
 

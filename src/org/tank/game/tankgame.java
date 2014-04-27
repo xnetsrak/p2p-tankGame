@@ -5,6 +5,8 @@ import javax.swing.*;
 import org.tank.Members.*;
 import org.tank.Model.Model;
 
+import rice.p2p.commonapi.Id;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,7 +30,6 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 
 	public tankgame() {
 
-		// Recorder rec = new Recorder();
 		jMenuBar = new JMenuBar();
 		jMenu = new JMenu("Game");
 
@@ -96,7 +97,7 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  org.tank.Model.Observer {
 
 	private static final long serialVersionUID = 1L;
-	private ArrayList<EnemyTank> enemyTanks = new ArrayList<EnemyTank>();
+	private HashMap<Id,EnemyTank> _enemyTanks = new HashMap<Id,EnemyTank>();
 	private Hero _hero = null;
 	private ArrayList<Bomb> _bombs = new ArrayList<Bomb>();
 
@@ -129,7 +130,7 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 	
 	public void update() 
 	{
-		enemyTanks = _model.getEnemyTanks();
+		_enemyTanks = _model.getEnemyTanks();
 		_hero = _model.getHero();
 		_bombs = _model.getBombs();
 		_myPoints = _model.getMyPoints();
@@ -138,12 +139,12 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 
 	public void showinfo(Graphics g) {
 
-		this.drawTank(20, 320, g, 0, 1);
+		//this.drawTank(20, 320, g, 0, 1);
+		//g.setColor(Color.black);
+		//g.drawString(enemyNum + " ", 45, 340);
+		this.drawTank(20, 320, g, 0, 0);
 		g.setColor(Color.black);
-		g.drawString(enemyNum + " ", 45, 340);
-		this.drawTank(100, 320, g, 0, 0);
-		g.setColor(Color.black);
-		g.drawString(_myPoints + " ", 130, 340);
+		g.drawString(_myPoints + " ", 45, 340);
 	}
 
 	public void paint(Graphics g) 
@@ -167,23 +168,23 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 			}
 		}
 
-		for (int i = 0; i < enemyTanks.size(); i++) {
 
-			if (enemyTanks.get(i).isLive) {
-				this.drawTank(enemyTanks.get(i).getX(), enemyTanks.get(i).getY(), g, enemyTanks.get(i).getDirect(), 1);
+		for(Id id : _enemyTanks.keySet())
+		{
+			if (_enemyTanks.get(id).isLive) {
+				this.drawTank(_enemyTanks.get(id).getX(), _enemyTanks.get(id).getY(), g, _enemyTanks.get(id).getDirect(), 1);
 
-				for (int j = 1; j <= enemyTanks.get(i).s.size(); j++) {
-					if (enemyTanks.get(i).s.get(j - 1).isLive == true) {
+				for (int j = 1; j <= _enemyTanks.get(id).s.size(); j++) {
+					if (_enemyTanks.get(id).s.get(j - 1).isLive == true) {
 						g.setColor(Color.black);
-						g.draw3DRect(enemyTanks.get(i).s.get(j - 1).x, enemyTanks.get(i).s.get(j - 1).y, 1, 1, false);
+						g.draw3DRect(_enemyTanks.get(id).s.get(j - 1).x, _enemyTanks.get(id).s.get(j - 1).y, 1, 1, false);
 					} else {
-						enemyTanks.get(i).s.remove(j - 1);
+						_enemyTanks.get(id).s.remove(j - 1);
 						j--;
 					}
 				}
 			} else {
-				enemyTanks.remove(i);
-				i--;
+				_enemyTanks.remove(id);
 			}
 		}
 

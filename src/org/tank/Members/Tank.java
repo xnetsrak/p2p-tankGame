@@ -11,6 +11,20 @@ public class Tank {
 	
 	// vertical coordinate value
 	public int y = 0;
+	
+	public Tank(int x, int y, int w) 
+	{
+		this.x = x;
+		this.y = y;
+		this.direct = w;
+	}
+	
+	public void updatePosistion(int x, int y, int w)
+	{
+		this.x = x; 
+		this.y = y;
+		this.direct = w;
+	}
 
 	public int getColor() {
 		return color;
@@ -19,8 +33,6 @@ public class Tank {
 	public void setColor(int color) {
 		this.color = color;
 	}
-
-	// 0 represents up, 1=right, 2=down, 3=left
 
 	public int getSpeed() {
 		return speed;
@@ -54,10 +66,4 @@ public class Tank {
 		this.y = y;
 	}
 
-
-
-	public Tank(int x, int y) {
-		this.x = x;
-		this.y = y;
-	}
 }

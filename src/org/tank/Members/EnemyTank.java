@@ -7,11 +7,8 @@ public class EnemyTank extends Tank implements Runnable {
 
 	public Vector<Shot> s = new Vector<Shot>();
 
-	public EnemyTank(int x, int y) {
-		super(x, y);
-		Random random = new Random();
-		int w = random.nextInt(4);
-		this.direct = w;
+	public EnemyTank(int x, int y, int direction) {
+		super(x, y, direction);
 	}
 
 	public void shotEnemy() {

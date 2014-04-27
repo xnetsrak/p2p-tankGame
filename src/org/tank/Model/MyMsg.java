@@ -47,33 +47,31 @@ public class MyMsg implements Message {
 	private static final long serialVersionUID = 1L;
 	private String type = "";
 
-  Id from; /*Where the Message came from.*/
-  Id to; /* Where the Message is going.*/
+	Id from; /*Where the Message came from.*/
+	Id to; /* Where the Message is going.*/
   
-  public MyMsg(Id from, Id to, String type) {
-    this.from = from;
-    this.to = to;
-    this.type = type;
-  }
+	public MyMsg(Id from, Id to, String type) {
+		this.from = from;
+		this.to = to;
+		this.type = type;
+	}
   
-
-
-public String toString() {
-    return "MyMsg from "+from+" to "+to;
-  }
-
-  /**
-   * Use low priority to prevent interference with overlay maintenance traffic.
-   */
-  public int getPriority() {
-    return Message.LOW_PRIORITY;
-  }
-  
-  public String getType() {
-	return type;
-}
-
-public void setType(String type) {
-	this.type = type;
-}
+	public String toString() {
+	    return "MyMsg from "+from+" to "+to;
+	}
+	
+	  /**
+	   * Use low priority to prevent interference with overlay maintenance traffic.
+	   */
+	  public int getPriority() {
+	    return Message.LOW_PRIORITY;
+	  }
+	  
+	  public String getType() {
+		  return type;
+	  }
+	
+	  public void setType(String type) {
+		  this.type = type;
+	  }
 }
