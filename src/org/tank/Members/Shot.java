@@ -1,14 +1,16 @@
 package org.tank.Members;
 
 public class Shot implements Runnable {
-	public int x, y, direct, speed;
+	public int x, y, direct, speed, gameWidth, gameHeight;
 	public boolean isLive = true;
 
-	public Shot(int x, int y, int direct, int speed) {
+	public Shot(int x, int y, int direct, int speed, int gameWidth, int gameHeight) {
 		this.x = x;
 		this.y = y;
 		this.direct = direct;
 		this.speed = speed;
+		this.gameWidth = gameWidth;
+		this.gameHeight = gameHeight;
 	}
 
 	public void run() {
@@ -32,7 +34,7 @@ public class Shot implements Runnable {
 				x -= speed;
 				break;
 			}
-			if (x < 0 || x > 400 || y < 0 || y > 300) {
+			if (x < 0 || x > gameWidth || y < 0 || y > gameHeight) {
 				isLive = false;
 			}
 		}

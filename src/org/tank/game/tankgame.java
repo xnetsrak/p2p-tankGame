@@ -49,7 +49,7 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 		this.setJMenuBar(jMenuBar);
 
 		this.setTitle("P2P tankGame");
-		this.setSize(500, 500);
+		this.setSize(width+200, height+200);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setVisible(true);
 		
@@ -102,7 +102,6 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 	private Hero _hero = null;
 	private ArrayList<Bomb> _bombs = new ArrayList<Bomb>();
 
-	int enemyNum = 10;
 	private Model _model;
 
 	// three image makes one bomb
@@ -143,9 +142,9 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 		//this.drawTank(20, 320, g, 0, 1);
 		//g.setColor(Color.black);
 		//g.drawString(enemyNum + " ", 45, 340);
-		this.drawTank(20, 320, g, 0, 0);
+		this.drawTank(20, _model.getGameHeight()+20, g, 0, 0);
 		g.setColor(Color.black);
-		g.drawString(_myPoints + " ", 45, 340);
+		g.drawString(_myPoints + " ", 45, _model.getGameHeight()+40);
 	}
 
 	public void paint(Graphics g) 
@@ -153,6 +152,9 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 
 		super.paint(g);
 		this.showinfo(g);
+		
+		g.setColor(Color.LIGHT_GRAY);
+		g.drawRect(0, 0, _model.getGameWidth(), _model.getGameHeight());
 
 		//if (_myPoints > 0)
 		this.drawTank(_hero.getX(), _hero.getY(), g, _hero.getDirect(), 0);
@@ -256,22 +258,24 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 
 	public void keyPressed(KeyEvent e) {
 
-		if ((e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_S) && _hero.y < 280) 
+		if ((e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_S) && _hero.y < _model.getGameHeight()-30) 
 			_model.changeHeroDirection(2);
 		else if ((e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_W) && _hero.y > 0) 
 			_model.changeHeroDirection(0);
 		else if ((e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_A) && _hero.x > 0) 
 			_model.changeHeroDirection(3);
-		else if ((e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == KeyEvent.VK_D) && _hero.x < 380) 
+		else if ((e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == KeyEvent.VK_D) && _hero.x < _model.getGameWidth()-30) 
 			_model.changeHeroDirection(1);
 		
-		if (e.getKeyCode() == KeyEvent.VK_J)
-			_model.shotEnemy();
 		
 		this.repaint();
 	}
 
 	public void keyReleased(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_J)
+			_model.shotEnemy();
+		
+		this.repaint();
 	}
 
 	public void keyTyped(KeyEvent e) {

@@ -50,7 +50,7 @@ public class Model
 		this.gameWidth = gameWidth;
 		this.gameHeight = gameHeight;
 		
-		_hero = new Hero((int) (Math.random() * getGameWidth()),(int) (Math.random() * getGameHeight()), random.nextInt(4));
+		_hero = new Hero((int) (Math.random() * getGameWidth()),(int) (Math.random() * getGameHeight()), random.nextInt(4), gameWidth, gameHeight);
 		
 		Thread t = new Thread(new RunThread(), "RunThread");
 		t.start();
@@ -143,7 +143,7 @@ public class Model
 			return;
 		
 		if(_enemyTanks.get(joinMsg.from) == null) {
-			EnemyTank et = new EnemyTank(joinMsg.x, joinMsg.y, joinMsg.direction);
+			EnemyTank et = new EnemyTank(joinMsg.x, joinMsg.y, joinMsg.direction, this.gameWidth, this.gameWidth);
 			_enemyTanks.put(joinMsg.from.getId(), et);
 		}
 		notifyObserver();
@@ -167,7 +167,7 @@ public class Model
 	public void tankJoinResponse(JoinResponseMsg joinMsg)
 	{
 		if(_enemyTanks.get(joinMsg.from) == null) {
-			EnemyTank et = new EnemyTank(joinMsg.x, joinMsg.y, joinMsg.direction);
+			EnemyTank et = new EnemyTank(joinMsg.x, joinMsg.y, joinMsg.direction, this.gameWidth, this.gameWidth);
 			_enemyTanks.put(joinMsg.from, et);
 		}
 		notifyObserver();

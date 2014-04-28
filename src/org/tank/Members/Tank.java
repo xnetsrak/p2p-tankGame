@@ -7,16 +7,21 @@ public class Tank {
 	public int color;
 	public boolean isLive = true;
 	public int direct = 1;
-	public int speed = 2;
+	public int speed = 6;
+	public int shotSpeed = 12;
+	public int gameWidth;
+	public int gameHeight;
 	
 	// vertical coordinate value
 	public int y = 0;
 	
-	public Tank(int x, int y, int w) 
+	public Tank(int x, int y, int w, int gameWidth, int gameHeight) 
 	{
 		this.x = x;
 		this.y = y;
 		this.direct = w;
+		this.gameWidth = gameWidth;
+		this.gameHeight = gameHeight;
 	}
 	
 	public void updatePosistion(int x, int y, int w)
