@@ -60,6 +60,7 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 	public void actionPerformed(ActionEvent e) {
 
 		if (e.getActionCommand().equals("exit")) {
+			_model.leaveGame();
 			System.exit(0);
 		}
 		if (e.getActionCommand().equals("joincreate")) {

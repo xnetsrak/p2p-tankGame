@@ -193,12 +193,23 @@ public class Model
 			et.shotEnemy();
 		notifyObserver();
 	}
-	public void tankShotMsg(ShotMsg shotMsg)
+	/*public void tankShotMsg(ShotMsg shotMsg)
 	{
 		EnemyTank et = _enemyTanks.get(shotMsg.from);
 		if(et != null)
 			et.shotEnemy();
 		notifyObserver();
+	}*/
+	public void recivedLeaveMsg(LeaveScribeMsg msg)
+	{
+		_enemyTanks.remove(msg.from.getId());
+		notifyObserver();
+	}
+	public void leaveGame()
+	{
+	    LeaveScribeMsg lm = new LeaveScribeMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
+	    _pastryApp.sendMulticast(lm);
+	    seqNum++;
 	}
 		
 	public void changeHeroDirection(int direction)

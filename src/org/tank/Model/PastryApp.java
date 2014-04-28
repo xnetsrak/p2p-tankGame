@@ -131,6 +131,9 @@ public class PastryApp implements Application, ScribeClient
 	    else if(recivedMsg instanceof ShotScribeMsg) {
 	    	_model.tankShotMsg((ShotScribeMsg)message);
 	    }
+	    else if(recivedMsg instanceof LeaveScribeMsg) {
+	    	_model.recivedLeaveMsg((LeaveScribeMsg)message);
+	    }
 		
 	}
 
