@@ -1,17 +1,17 @@
 package org.tank.Model;
 
-import rice.p2p.commonapi.Id;
+import rice.p2p.commonapi.NodeHandle;
 
-public class JoinResponseMsg extends MyMsg 
+public class TankPosUpdateScribeMsg extends MyScribeMsg
 {
 	private static final long serialVersionUID = 1L;
 	int x;
 	int y;
 	int direction;
-
-	public JoinResponseMsg(Id from, Id to) 
-	{
-		super(from, to, "JoinResponse");
+	
+	public TankPosUpdateScribeMsg(NodeHandle from, int seq) {
+		super(from, seq);
+		
 	}
 	
 	public void setPosistion(int x, int y, int direction)
