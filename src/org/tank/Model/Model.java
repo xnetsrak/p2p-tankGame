@@ -339,7 +339,7 @@ public class Model
 						hitmytank(t.s.get(j), _hero);
 				}
 				
-				if(System.currentTimeMillis()-lastMoveTime > 50 && !hasMoved) {
+				if(frameNumber != -1 && System.currentTimeMillis()-lastMoveTime > 50 && !hasMoved) {
 					sendPosistionUpdate();
 					lastMoveTime = System.currentTimeMillis();
 				}
