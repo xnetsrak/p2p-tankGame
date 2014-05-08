@@ -15,7 +15,6 @@ import org.tank.Members.Tank;
 import org.tank.Msg.CoordinatorUpdateMsg;
 import org.tank.Msg.JoinResponseMsg;
 import org.tank.Msg.JoinScribeMsg;
-import org.tank.Msg.JoinScribeResponseMsg;
 import org.tank.Msg.LeaveScribeMsg;
 import org.tank.Msg.ShotScribeMsg;
 import org.tank.Msg.TankPosUpdateScribeMsg;
@@ -51,6 +50,8 @@ public class Model
 	private Random random = new Random();
 	private int seqNum = 0;
 	private int frameNumber = -1;
+	private long lastMoveTime = 0;
+	private boolean hasMoved = false;
 
 	private Coordinator _coordinator = null;
 	private ArrayList<NodeHandle> _coordinatorIds = new ArrayList<NodeHandle>();
@@ -166,6 +167,7 @@ public class Model
 		default:
 			break;
 		}
+		hasMoved = true;
 		sendPosistionUpdate();
 		
 	}
@@ -193,6 +195,7 @@ public class Model
 				_enemyTanks.put(tank.Id, new EnemyTank(tank.x, tank.y, tank.w, this.gameWidth, this.gameHeight));
 		}
 		this.frameNumber = msg.newFrameNumber;
+		hasMoved = false;
 		
 		notifyObserver();
 	}
@@ -335,6 +338,12 @@ public class Model
 					for (int j = 0; j < t.s.size(); j++)
 						hitmytank(t.s.get(j), _hero);
 				}
+				
+				if(System.currentTimeMillis()-lastMoveTime > 50 && !hasMoved) {
+					sendPosistionUpdate();
+					lastMoveTime = System.currentTimeMillis();
+				}
+					
 
 			}
 		}
