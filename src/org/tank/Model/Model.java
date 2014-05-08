@@ -50,6 +50,7 @@ public class Model
 	private Hero _hero;
 	private Random random = new Random();
 	private int seqNum = 0;
+	private int frameNumber = -1;
 
 	private Coordinator _coordinator = null;
 	private ArrayList<NodeHandle> _coordinatorIds = new ArrayList<NodeHandle>();
@@ -137,9 +138,10 @@ public class Model
 	    return _pastryNode != null && _pastryApp != null;
 	}
 	
-	public void tankJoinResponse(JoinScribeResponseMsg joinMsg)
+	public void tankJoinResponse(JoinResponseMsg msg)
 	{
-		_coordinatorIds.add(joinMsg.from);
+		_coordinatorIds.add(msg.fromNodeHandle);
+		frameNumber = msg.frameNumber;
 	}
 	
 	public void changeHeroDirection(int direction)
@@ -169,10 +171,10 @@ public class Model
 	}
 	public void sendPosistionUpdate()
 	{
-		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getLocalNodeHandle().getId());
+		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId());
 	    
 	    for(NodeHandle nh : _coordinatorIds) {
-	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getLocalNodeHandle().getId(), nh.getId(), tankUpdate);
+	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
 	    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
 	    }
 	    
@@ -183,10 +185,14 @@ public class Model
 		for(TankUpdate tank : msg._tanks)
 		{
 			if(_enemyTanks.containsKey(tank.Id))
-				;
+			{
+				EnemyTank eTank = _enemyTanks.get(tank.Id);
+				eTank.updatePosistion(tank.x, tank.y, tank.w);
+			}
 			else
-				_enemyTanks.put(tank.Id, new EnemyTank(50, 50, 0, this.gameWidth, this.gameHeight));
+				_enemyTanks.put(tank.Id, new EnemyTank(tank.x, tank.y, tank.w, this.gameWidth, this.gameHeight));
 		}
+		this.frameNumber = msg.newFrameNumber;
 		
 		notifyObserver();
 	}

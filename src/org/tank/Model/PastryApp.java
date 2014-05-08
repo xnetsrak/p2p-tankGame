@@ -9,6 +9,7 @@ import org.tank.Msg.MyMsg;
 import org.tank.Msg.MyScribeMsg;
 import org.tank.Msg.ShotScribeMsg;
 import org.tank.Msg.TankPosUpdateScribeMsg;
+import org.tank.Msg.TankPositionUpdateMsg;
 
 import rice.p2p.commonapi.Application;
 import rice.p2p.commonapi.CancellableTask;
@@ -73,13 +74,17 @@ public class PastryApp implements Application, ScribeClient
 	    if(msgType.equals("Join")) {
 	    	//_model.tankJoin((JoinMsg)recivedMsg);
 	    }
-	    else if(msgType.equals("PosUpdate"))
+	    else if(msgType.equals("TankUpdate"))
 	    {
-	    	//_model.enemyTankPositionUpdate((TankPositionUpdateMsg)recivedMsg);
+	    	if(_model.getCoordinator() != null)
+	    		_model.getCoordinator().tankUpdateRequest((TankPositionUpdateMsg)recivedMsg);
 	    }
 	    else if(msgType.equals("ShotMsg"))
 	    {
 	    	//_model.tankShotMsg((ShotMsg)recivedMsg);
+	    }
+	    else if(recivedMsg instanceof JoinResponseMsg) {
+	    	_model.tankJoinResponse((JoinResponseMsg)recivedMsg);
 	    }
 	    
 	  }
@@ -131,9 +136,6 @@ public class PastryApp implements Application, ScribeClient
 	    if(recivedMsg instanceof JoinScribeMsg) {
 	    	if(_model.getCoordinator() != null)
 	    		_model.getCoordinator().tankJoin((JoinScribeMsg)recivedMsg);
-	    }
-	    else if(recivedMsg instanceof JoinScribeResponseMsg) {
-	    	_model.tankJoinResponse((JoinScribeResponseMsg)recivedMsg);
 	    }
 	    else if(recivedMsg instanceof CoordinatorUpdateMsg) {
 	    	_model.coordinatorUpdateMsg((CoordinatorUpdateMsg)message);

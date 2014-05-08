@@ -9,8 +9,10 @@ import java.util.Set;
 import org.tank.Members.EnemyTank;
 import org.tank.Members.Tank;
 import org.tank.Msg.CoordinatorUpdateMsg;
+import org.tank.Msg.JoinResponseMsg;
 import org.tank.Msg.JoinScribeMsg;
 import org.tank.Msg.JoinScribeResponseMsg;
+import org.tank.Msg.TankPositionUpdateMsg;
 
 import rice.p2p.commonapi.Id;
 import rice.pastry.PastryNode;
@@ -24,6 +26,7 @@ public class Coordinator
 	private PastryNode _pastryNode;
 	private Model _model;
 	private int seqNum = 0;
+	private int frameNumber = 0;
 	
 	public Coordinator(PastryNode pastryNode, PastryApp pastryApp, Model model, boolean isCoo)
 	{
@@ -47,23 +50,38 @@ public class Coordinator
 		
 		if(_tanks.get(joinMsg.from) == null) {
 			Tank et = new Tank(joinMsg.x, joinMsg.y, joinMsg.direction, _model.getGameWidth(), _model.getGameHeight());
+			et.hasMoved = true;
 			_tanks.put(joinMsg.from.getId(), et);
 		}
 		
-		JoinScribeResponseMsg jm = new JoinScribeResponseMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
-		_pastryApp.sendMulticast(jm);
-		seqNum++;
+		JoinResponseMsg jrm = new JoinResponseMsg(_pastryApp.endpoint.getId(), joinMsg.from.getId(),_pastryApp.endpoint.getLocalNodeHandle(), true, frameNumber);
+		_pastryApp.routeMyMsgDirect(joinMsg.from, jrm);
 		
+	}
+	
+	public void tankUpdateRequest(TankPositionUpdateMsg recivedMsg)
+	{
+		if(recivedMsg.frameNumber != this.frameNumber)
+			return;
+		
+		Tank tank = _tanks.get(recivedMsg.tankUpdate.Id);
+		if(tank != null && !tank.hasMoved) {
+			tank.updatePosistion(recivedMsg.tankUpdate.x, recivedMsg.tankUpdate.y, recivedMsg.tankUpdate.w);
+			tank.hasMoved = true;
+		}
+		
+		//retuner OK engang
 	}
 	
 	public void sendFrameUpdate()
 	{
 		try
 		{
-			CoordinatorUpdateMsg updateMsg = new CoordinatorUpdateMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
+			CoordinatorUpdateMsg updateMsg = new CoordinatorUpdateMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum, frameNumber, frameNumber+1);
 			updateMsg.setTank(getTanksUpdate());
 			_pastryApp.sendMulticast(updateMsg);
 			seqNum++;
+			frameNumber++;
 		}
 		catch(Exception ex)
 		{
@@ -85,6 +103,16 @@ public class Coordinator
 		return stockArr;
 	}
 	
+	private boolean recivedAllUpdates() 
+	{
+		for(Id id : _tanks.keySet()) {
+			Tank t = _tanks.get(id);
+			if(!t.hasMoved)
+				return false;
+		}
+		return true;
+	}
+	
 	class CoordinatorThread implements Runnable
 	{
 
@@ -93,8 +121,17 @@ public class Coordinator
 			while(_active)
 			{
 				try {
-					_pastryNode.getEnvironment().getTimeSource().sleep(50);
-					sendFrameUpdate();
+					
+					if(recivedAllUpdates()) {
+						sendFrameUpdate();
+						
+						for(Id id : _tanks.keySet()) {
+							Tank t = _tanks.get(id);
+							t.hasMoved = false;
+						}
+					}
+					_pastryNode.getEnvironment().getTimeSource().sleep(10);
+					
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}

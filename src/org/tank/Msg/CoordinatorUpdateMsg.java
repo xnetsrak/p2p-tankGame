@@ -9,10 +9,13 @@ public class CoordinatorUpdateMsg extends MyScribeMsg
 {
 	private static final long serialVersionUID = 1L;
 	public TankUpdate[] _tanks;
+	public int oldFrameNumber;
+	public int newFrameNumber;
 
-	public CoordinatorUpdateMsg(NodeHandle from, int seq) {
+	public CoordinatorUpdateMsg(NodeHandle from, int seq, int oldFrameNumber, int newFrameNumber) {
 		super(from, seq);
-		// TODO Auto-generated constructor stub
+		this.oldFrameNumber = oldFrameNumber;
+		this.newFrameNumber = newFrameNumber;
 	}
 	
 	public void setTank(TankUpdate[] tanks)

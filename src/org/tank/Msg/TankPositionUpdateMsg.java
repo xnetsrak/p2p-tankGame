@@ -8,11 +8,13 @@ public class TankPositionUpdateMsg extends MyMsg
 {
 	private static final long serialVersionUID = 1L;
 	public TankUpdate tankUpdate;
+	public int frameNumber;
 
-	public TankPositionUpdateMsg(Id from, Id to, TankUpdate tankUpdate) 
+	public TankPositionUpdateMsg(Id from, Id to, TankUpdate tankUpdate, int frameNumber) 
 	{
 		super(from, to, "TankUpdate");
 		this.tankUpdate = tankUpdate;
+		this.frameNumber = frameNumber;
 	}
 
 }

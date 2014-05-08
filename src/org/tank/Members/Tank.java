@@ -11,6 +11,7 @@ public class Tank {
 	public int shotSpeed = 12;
 	public int gameWidth;
 	public int gameHeight;
+	public boolean hasMoved = false;
 	
 	// vertical coordinate value
 	public int y = 0;
