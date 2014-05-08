@@ -1,13 +1,13 @@
-package org.tank.Model;
+package org.tank.Msg;
 
 import rice.p2p.commonapi.NodeHandle;
 
 public class JoinScribeMsg extends MyScribeMsg
 {
 	private static final long serialVersionUID = 1L;
-	int x;
-	int y;
-	int direction;
+	public int x;
+	public int y;
+	public int direction;
 
 	public JoinScribeMsg(NodeHandle from, int seq) {
 		super(from, seq);

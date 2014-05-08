@@ -1,5 +1,7 @@
 package org.tank.Model;
 
+import org.tank.Msg.MyMsg;
+
 import rice.p2p.commonapi.Id;
 
 public class JoinMsg extends MyMsg

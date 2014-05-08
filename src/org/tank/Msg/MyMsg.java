@@ -1,4 +1,4 @@
-package org.tank.Model;
+package org.tank.Msg;
 /*******************************************************************************
 
 "FreePastry" Peer-to-Peer Application Development Substrate
@@ -48,8 +48,8 @@ public class MyMsg implements Message  {
 	private static final long serialVersionUID = 1L;
 	private String type = "";
 
-	Id from; /*Where the Message came from.*/
-	Id to; /* Where the Message is going.*/
+	public Id from; /*Where the Message came from.*/
+	public Id to; /* Where the Message is going.*/
   
 	public MyMsg(Id from, Id to, String type) {
 		this.from = from;

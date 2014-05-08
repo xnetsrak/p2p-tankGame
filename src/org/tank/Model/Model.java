@@ -12,10 +12,18 @@ import org.tank.Members.EnemyTank;
 import org.tank.Members.Hero;
 import org.tank.Members.Shot;
 import org.tank.Members.Tank;
+import org.tank.Msg.CoordinatorUpdateMsg;
+import org.tank.Msg.JoinResponseMsg;
+import org.tank.Msg.JoinScribeMsg;
+import org.tank.Msg.JoinScribeResponseMsg;
+import org.tank.Msg.LeaveScribeMsg;
+import org.tank.Msg.ShotScribeMsg;
+import org.tank.Msg.TankPosUpdateScribeMsg;
+import org.tank.Msg.TankPositionUpdateMsg;
 
 import rice.environment.Environment;
 import rice.p2p.commonapi.Id;
-import rice.pastry.NodeHandle;
+import rice.p2p.commonapi.NodeHandle;
 import rice.pastry.NodeIdFactory;
 import rice.pastry.PastryNode;
 import rice.pastry.PastryNodeFactory;
@@ -42,6 +50,9 @@ public class Model
 	private Hero _hero;
 	private Random random = new Random();
 	private int seqNum = 0;
+
+	private Coordinator _coordinator = null;
+	private ArrayList<NodeHandle> _coordinatorIds = new ArrayList<NodeHandle>();
 	
 	private status currStatus = new status();
 	
@@ -111,23 +122,12 @@ public class Model
 	    }
 	    
 	    System.out.println("Finished creating new node "+_pastryNode);
-	    
-	   /* 
-	    //Send Join Msgs to leaf
-	   LeafSet leafSet = _pastryNode.getLeafSet();
-	    ArrayList<rice.p2p.commonapi.Id> sentTo = new ArrayList<rice.p2p.commonapi.Id>();
-	    for (int i=-leafSet.ccwSize(); i<=leafSet.cwSize(); i++) {
-	      if (i != 0) { // don't send to self
-	        // select the item
-	        NodeHandle nh = leafSet.get(i);
-	        if(!sentTo.contains(nh.getId())) {
-	        	JoinMsg jm = new JoinMsg(_pastryApp.endpoint.getId(), nh.getId(), seqNum);
-	        	jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
-	        	_pastryApp.routeMyMsgDirect(nh, jm);  
-	        }
-	        sentTo.add(nh.getId());
-	      }
-	    }*/
+   
+	    LeafSet leafSet = _pastryNode.getLeafSet();
+	    if(leafSet.size() == 0) {
+	    	_coordinator = new Coordinator(_pastryNode, _pastryApp, this, true); //.start()
+	    	_coordinator.start();
+	    }
 	    
 	    JoinScribeMsg jm = new JoinScribeMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
 	    jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
@@ -137,81 +137,11 @@ public class Model
 	    return _pastryNode != null && _pastryApp != null;
 	}
 	
-	public void tankJoin(JoinScribeMsg joinMsg)
+	public void tankJoinResponse(JoinScribeResponseMsg joinMsg)
 	{
-		if(joinMsg.from.equals(_pastryApp.endpoint.getLocalNodeHandle()))
-			return;
-		
-		if(_enemyTanks.get(joinMsg.from) == null) {
-			EnemyTank et = new EnemyTank(joinMsg.x, joinMsg.y, joinMsg.direction, this.gameWidth, this.gameWidth);
-			_enemyTanks.put(joinMsg.from.getId(), et);
-		}
-		notifyObserver();
-		
-		JoinResponseMsg jm = new JoinResponseMsg(_pastryApp.endpoint.getId(), joinMsg.from.getId());
-		jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
-		_pastryApp.routeMyMsg(joinMsg.from.getId(), jm);
+		_coordinatorIds.add(joinMsg.from);
 	}
-	/*public void tankJoin(JoinMsg joinMsg)
-	{
-		if(_enemyTanks.get(joinMsg.from) == null) {
-			EnemyTank et = new EnemyTank(joinMsg.x, joinMsg.y, joinMsg.direction);
-			_enemyTanks.put(joinMsg.from, et);
-		}
-		notifyObserver();
-		
-		JoinResponseMsg jm = new JoinResponseMsg(_pastryApp.endpoint.getId(), joinMsg.from);
-		jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
-		_pastryApp.routeMyMsg(joinMsg.from, jm);
-	}	*/
-	public void tankJoinResponse(JoinResponseMsg joinMsg)
-	{
-		if(_enemyTanks.get(joinMsg.from) == null) {
-			EnemyTank et = new EnemyTank(joinMsg.x, joinMsg.y, joinMsg.direction, this.gameWidth, this.gameWidth);
-			_enemyTanks.put(joinMsg.from, et);
-		}
-		notifyObserver();
-	}
-	public void enemyTankPositionUpdate(TankPosUpdateScribeMsg updateMsg)
-	{
-		EnemyTank et = _enemyTanks.get(updateMsg.from.getId());
-		if(et != null)
-			et.updatePosistion(updateMsg.x, updateMsg.y, updateMsg.direction);
-		notifyObserver();
-	}
-	/*public void enemyTankPositionUpdate(TankPositionUpdateMsg updateMsg)
-	{
-		EnemyTank et = _enemyTanks.get(updateMsg.from);
-		if(et != null)
-			et.updatePosistion(updateMsg.x, updateMsg.y, updateMsg.direction);
-		notifyObserver();
-	}*/
-	public void tankShotMsg(ShotScribeMsg shotMsg)
-	{
-		EnemyTank et = _enemyTanks.get(shotMsg.from.getId());
-		if(et != null)
-			et.shotEnemy();
-		notifyObserver();
-	}
-	/*public void tankShotMsg(ShotMsg shotMsg)
-	{
-		EnemyTank et = _enemyTanks.get(shotMsg.from);
-		if(et != null)
-			et.shotEnemy();
-		notifyObserver();
-	}*/
-	public void recivedLeaveMsg(LeaveScribeMsg msg)
-	{
-		_enemyTanks.remove(msg.from.getId());
-		notifyObserver();
-	}
-	public void leaveGame()
-	{
-	    LeaveScribeMsg lm = new LeaveScribeMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
-	    _pastryApp.sendMulticast(lm);
-	    seqNum++;
-	}
-		
+	
 	public void changeHeroDirection(int direction)
 	{
 		switch (direction) {
@@ -237,50 +167,75 @@ public class Model
 		sendPosistionUpdate();
 		
 	}
-	
 	public void sendPosistionUpdate()
 	{
-		/*LeafSet leafSet = _pastryNode.getLeafSet();
-	    ArrayList<rice.p2p.commonapi.Id> sentTo = new ArrayList<rice.p2p.commonapi.Id>();
-	    for (int i=-leafSet.ccwSize(); i<=leafSet.cwSize(); i++) {
-	      if (i != 0) { // don't send to self
-	        // select the item
-	        NodeHandle nh = leafSet.get(i);
-	        if(!sentTo.contains(nh.getId())) {
-	        	
-	        	TankPositionUpdateMsg jm = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId());
-	        	jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
-	        	_pastryApp.routeMyMsgDirect(nh, jm);  
-	        	
-	        }
-	        sentTo.add(nh.getId());
-	      }
-	    }*/
-	    TankPosUpdateScribeMsg jm = new TankPosUpdateScribeMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
-	    jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
-	    _pastryApp.sendMulticast(jm);
-	    seqNum++;
+		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getLocalNodeHandle().getId());
+	    
+	    for(NodeHandle nh : _coordinatorIds) {
+	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getLocalNodeHandle().getId(), nh.getId(), tankUpdate);
+	    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
+	    }
 	    
 	}
 	
+	public void coordinatorUpdateMsg(CoordinatorUpdateMsg msg)
+	{
+		for(TankUpdate tank : msg._tanks)
+		{
+			if(_enemyTanks.containsKey(tank.Id))
+				;
+			else
+				_enemyTanks.put(tank.Id, new EnemyTank(50, 50, 0, this.gameWidth, this.gameHeight));
+		}
+		
+		notifyObserver();
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	public void enemyTankPositionUpdate(TankPosUpdateScribeMsg updateMsg)
+	{
+		EnemyTank et = _enemyTanks.get(updateMsg.from.getId());
+		if(et != null)
+			et.updatePosistion(updateMsg.x, updateMsg.y, updateMsg.direction);
+		notifyObserver();
+	}
+	public void tankShotMsg(ShotScribeMsg shotMsg)
+	{
+		EnemyTank et = _enemyTanks.get(shotMsg.from.getId());
+		if(et != null)
+			et.shotEnemy();
+		notifyObserver();
+	}
+	public void recivedLeaveMsg(LeaveScribeMsg msg)
+	{
+		_enemyTanks.remove(msg.from.getId());
+		notifyObserver();
+	}
+	public void leaveGame()
+	{
+	    LeaveScribeMsg lm = new LeaveScribeMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
+	    _pastryApp.sendMulticast(lm);
+	    seqNum++;
+	}
+		
+
+	
+
+	
 	public void shotEnemy()
 	{
-		/*LeafSet leafSet = _pastryNode.getLeafSet();
-	    ArrayList<rice.p2p.commonapi.Id> sentTo = new ArrayList<rice.p2p.commonapi.Id>();
-	    for (int i=-leafSet.ccwSize(); i<=leafSet.cwSize(); i++) {
-	      if (i != 0) { // don't send to self
-	        // select the item
-	        NodeHandle nh = leafSet.get(i);
-	        if(!sentTo.contains(nh.getId())) {
-	        	
-	        	ShotMsg sm = new ShotMsg(_pastryApp.endpoint.getId(), nh.getId());
-	        	_pastryApp.routeMyMsgDirect(nh, sm);  
-	        	
-	        }
-	        sentTo.add(nh.getId());
-	      }
-	    }
-	    */
+
 		if (this._hero.s.size() < 5) {
 			
 			ShotScribeMsg sm = new ShotScribeMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
@@ -379,7 +334,6 @@ public class Model
 		}
 	}
 	
-	
 	public void addObserver(Observer obs)
 	{
 		observers.add(obs);
@@ -414,4 +368,86 @@ public class Model
 	public int getMyPoints() { return myPoints; }
 
 	public void setMyPoints(int myPoints) { this.myPoints = myPoints; }
+	
+	public Coordinator getCoordinator() { return _coordinator; }
+
+	public void setCoordinator(Coordinator _coordinator) { this._coordinator = _coordinator; }
+
 }
+
+/* 
+//Send Join Msgs to leaf
+LeafSet leafSet = _pastryNode.getLeafSet();
+ArrayList<rice.p2p.commonapi.Id> sentTo = new ArrayList<rice.p2p.commonapi.Id>();
+for (int i=-leafSet.ccwSize(); i<=leafSet.cwSize(); i++) {
+  if (i != 0) { // don't send to self
+    // select the item
+    NodeHandle nh = leafSet.get(i);
+    if(!sentTo.contains(nh.getId())) {
+    	JoinMsg jm = new JoinMsg(_pastryApp.endpoint.getId(), nh.getId(), seqNum);
+    	jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
+    	_pastryApp.routeMyMsgDirect(nh, jm);  
+    }
+    sentTo.add(nh.getId());
+  }
+}*/
+
+/*public void tankJoin(JoinMsg joinMsg)
+{
+	if(_enemyTanks.get(joinMsg.from) == null) {
+		EnemyTank et = new EnemyTank(joinMsg.x, joinMsg.y, joinMsg.direction);
+		_enemyTanks.put(joinMsg.from, et);
+	}
+	notifyObserver();
+	
+	JoinResponseMsg jm = new JoinResponseMsg(_pastryApp.endpoint.getId(), joinMsg.from);
+	jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
+	_pastryApp.routeMyMsg(joinMsg.from, jm);
+}	*/
+
+/*LeafSet leafSet = _pastryNode.getLeafSet();
+ArrayList<rice.p2p.commonapi.Id> sentTo = new ArrayList<rice.p2p.commonapi.Id>();
+for (int i=-leafSet.ccwSize(); i<=leafSet.cwSize(); i++) {
+  if (i != 0) { // don't send to self
+    // select the item
+    NodeHandle nh = leafSet.get(i);
+    if(!sentTo.contains(nh.getId())) {
+    	
+    	TankPositionUpdateMsg jm = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId());
+    	jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
+    	_pastryApp.routeMyMsgDirect(nh, jm);  
+    	
+    }
+    sentTo.add(nh.getId());
+  }
+}*/
+/*public void enemyTankPositionUpdate(TankPositionUpdateMsg updateMsg)
+{
+	EnemyTank et = _enemyTanks.get(updateMsg.from);
+	if(et != null)
+		et.updatePosistion(updateMsg.x, updateMsg.y, updateMsg.direction);
+	notifyObserver();
+}*/
+/*LeafSet leafSet = _pastryNode.getLeafSet();
+ArrayList<rice.p2p.commonapi.Id> sentTo = new ArrayList<rice.p2p.commonapi.Id>();
+for (int i=-leafSet.ccwSize(); i<=leafSet.cwSize(); i++) {
+  if (i != 0) { // don't send to self
+    // select the item
+    NodeHandle nh = leafSet.get(i);
+    if(!sentTo.contains(nh.getId())) {
+    	
+    	ShotMsg sm = new ShotMsg(_pastryApp.endpoint.getId(), nh.getId());
+    	_pastryApp.routeMyMsgDirect(nh, sm);  
+    	
+    }
+    sentTo.add(nh.getId());
+  }
+}
+*/
+/*public void tankShotMsg(ShotMsg shotMsg)
+{
+	EnemyTank et = _enemyTanks.get(shotMsg.from);
+	if(et != null)
+		et.shotEnemy();
+	notifyObserver();
+}*/

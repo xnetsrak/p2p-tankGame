@@ -1,5 +1,15 @@
 package org.tank.Model;
 
+import org.tank.Msg.CoordinatorUpdateMsg;
+import org.tank.Msg.JoinResponseMsg;
+import org.tank.Msg.JoinScribeMsg;
+import org.tank.Msg.JoinScribeResponseMsg;
+import org.tank.Msg.LeaveScribeMsg;
+import org.tank.Msg.MyMsg;
+import org.tank.Msg.MyScribeMsg;
+import org.tank.Msg.ShotScribeMsg;
+import org.tank.Msg.TankPosUpdateScribeMsg;
+
 import rice.p2p.commonapi.Application;
 import rice.p2p.commonapi.CancellableTask;
 import rice.p2p.commonapi.Endpoint;
@@ -23,6 +33,8 @@ public class PastryApp implements Application, ScribeClient
 	  CancellableTask publishTask;
 	  Scribe myScribe;
 	  Topic myTopic;
+	  
+	  int seqNum = 0;
 
 	  public PastryApp(Node node, Model model) 
 	  {
@@ -65,10 +77,6 @@ public class PastryApp implements Application, ScribeClient
 	    {
 	    	//_model.enemyTankPositionUpdate((TankPositionUpdateMsg)recivedMsg);
 	    }
-	    else if(msgType.equals("JoinResponse"))
-	    {
-	    	_model.tankJoinResponse((JoinResponseMsg)recivedMsg);
-	    }
 	    else if(msgType.equals("ShotMsg"))
 	    {
 	    	//_model.tankShotMsg((ShotMsg)recivedMsg);
@@ -97,10 +105,8 @@ public class PastryApp implements Application, ScribeClient
 	  
 	  /* Sends the multicast message.*/
 	  public void sendMulticast(MyScribeMsg msg) {
-		  System.out.println("Node "+endpoint.getLocalNodeHandle()+" broadcasting "+msg.seq);
-		  //MyScribeContent myMessage = new MyScribeContent(endpoint.getLocalNodeHandle(), seqNum);
-		  myScribe.publish(myTopic, msg); 
-		  //seqNum++;
+			System.out.println("Node "+endpoint.getLocalNodeHandle()+" broadcasting "+seqNum);
+			myScribe.publish(myTopic, msg);
 	  }
 	  
 	public boolean anycast(Topic arg0, ScribeContent arg1) {
@@ -123,8 +129,16 @@ public class PastryApp implements Application, ScribeClient
 		MyScribeMsg recivedMsg = (MyScribeMsg)message;
 	    
 	    if(recivedMsg instanceof JoinScribeMsg) {
-	    	_model.tankJoin((JoinScribeMsg)recivedMsg);
+	    	if(_model.getCoordinator() != null)
+	    		_model.getCoordinator().tankJoin((JoinScribeMsg)recivedMsg);
 	    }
+	    else if(recivedMsg instanceof JoinScribeResponseMsg) {
+	    	_model.tankJoinResponse((JoinScribeResponseMsg)recivedMsg);
+	    }
+	    else if(recivedMsg instanceof CoordinatorUpdateMsg) {
+	    	_model.coordinatorUpdateMsg((CoordinatorUpdateMsg)message);
+	    }
+	    
 	    else if(recivedMsg instanceof TankPosUpdateScribeMsg) {
 	    	_model.enemyTankPositionUpdate((TankPosUpdateScribeMsg)message);
 	    }
@@ -135,6 +149,10 @@ public class PastryApp implements Application, ScribeClient
 	    	_model.recivedLeaveMsg((LeaveScribeMsg)message);
 	    }
 		
+	}
+	
+	public boolean isRoot() {
+		return myScribe.isRoot(myTopic);
 	}
 
 	public void subscribeFailed(Topic arg0) {

@@ -1,26 +1,18 @@
-package org.tank.Model;
+package org.tank.Msg;
+
+import org.tank.Model.TankUpdate;
 
 import rice.p2p.commonapi.Id;
 
 public class TankPositionUpdateMsg extends MyMsg
 {
 	private static final long serialVersionUID = 1L;
-	
-	int x;
-	int y;
-	int direction;
+	public TankUpdate tankUpdate;
 
-	public TankPositionUpdateMsg(Id from, Id to) 
+	public TankPositionUpdateMsg(Id from, Id to, TankUpdate tankUpdate) 
 	{
-		super(from, to, "PosUpdate");
-		
-	}
-	
-	public void setPosistion(int x, int y, int direction)
-	{
-		this.x = x;
-		this.y = y;
-		this.direction = direction;
+		super(from, to, "TankUpdate");
+		this.tankUpdate = tankUpdate;
 	}
 
 }
