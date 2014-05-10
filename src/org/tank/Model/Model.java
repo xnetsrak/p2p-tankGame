@@ -147,6 +147,9 @@ public class Model
 	
 	public void changeHeroDirection(int direction)
 	{
+		if(hasMoved)
+			return;
+		
 		switch (direction) {
 		case 0:
 			_hero.setDirect(0);
@@ -167,7 +170,6 @@ public class Model
 		default:
 			break;
 		}
-		hasMoved = true;
 		sendPosistionUpdate();
 		
 	}
@@ -179,7 +181,7 @@ public class Model
 	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
 	    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
 	    }
-	    
+		hasMoved = true;
 	}
 	
 	public void coordinatorUpdateMsg(CoordinatorUpdateMsg msg)
@@ -196,6 +198,7 @@ public class Model
 		}
 		this.frameNumber = msg.newFrameNumber;
 		hasMoved = false;
+		lastMoveTime = System.currentTimeMillis();
 		
 		notifyObserver();
 	}

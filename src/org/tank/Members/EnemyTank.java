@@ -5,13 +5,13 @@ import java.util.Vector;
 
 public class EnemyTank extends Tank {
 
-	public Vector<Shot> s = new Vector<Shot>();
+	/*public Vector<Shot> s = new Vector<Shot>();*/
 
 	public EnemyTank(int x, int y, int direction, int gameWidth, int gameHeight) {
 		super(x, y, direction, gameWidth, gameHeight);
 	}
 
-	public void shotEnemy() {
+	/*public void shotEnemy() {
 
 		switch (this.getDirect()) {
 		case 0:
@@ -39,7 +39,7 @@ public class EnemyTank extends Tank {
 			s.add(s4);
 			break;
 		}
-	}
+	}*/
 
 	/*public void run() {
 
