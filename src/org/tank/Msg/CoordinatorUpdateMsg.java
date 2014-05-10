@@ -2,7 +2,6 @@ package org.tank.Msg;
 
 import org.tank.Model.TankUpdate;
 
-import rice.p2p.commonapi.Id;
 import rice.p2p.commonapi.NodeHandle;
 
 public class CoordinatorUpdateMsg extends MyScribeMsg

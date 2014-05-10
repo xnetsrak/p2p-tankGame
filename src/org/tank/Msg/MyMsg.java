@@ -41,7 +41,6 @@ advised of the possibility of such damage.
 
 import rice.p2p.commonapi.Id;
 import rice.p2p.commonapi.Message;
-import rice.p2p.scribe.ScribeContent;
 
 public class MyMsg implements Message  {
 

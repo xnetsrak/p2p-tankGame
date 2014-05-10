@@ -16,8 +16,6 @@ import org.tank.Msg.CoordinatorUpdateMsg;
 import org.tank.Msg.JoinResponseMsg;
 import org.tank.Msg.JoinScribeMsg;
 import org.tank.Msg.LeaveScribeMsg;
-import org.tank.Msg.ShotScribeMsg;
-import org.tank.Msg.TankPosUpdateScribeMsg;
 import org.tank.Msg.TankPositionUpdateMsg;
 
 import rice.environment.Environment;
@@ -170,12 +168,20 @@ public class Model
 		default:
 			break;
 		}
-		sendPosistionUpdate();
-		
+		sendUpdate(false);
 	}
-	public void sendPosistionUpdate()
+	public void shotEnemy()
 	{
-		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId());
+		if(hasMoved)
+			return;
+		
+		_hero.shotEnemy();
+		sendUpdate(true);
+	}
+	
+	public void sendUpdate(boolean fireShot)
+	{
+		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), fireShot);
 	    
 	    for(NodeHandle nh : _coordinatorIds) {
 	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
@@ -188,10 +194,15 @@ public class Model
 	{
 		for(TankUpdate tank : msg._tanks)
 		{
+			if(tank.Id.equals(_pastryApp.endpoint.getId()))
+				continue;
+			
 			if(_enemyTanks.containsKey(tank.Id))
 			{
 				EnemyTank eTank = _enemyTanks.get(tank.Id);
 				eTank.updatePosistion(tank.x, tank.y, tank.w);
+				if(tank.fireShot)
+					eTank.shotEnemy();
 			}
 			else
 				_enemyTanks.put(tank.Id, new EnemyTank(tank.x, tank.y, tank.w, this.gameWidth, this.gameHeight));
@@ -215,20 +226,20 @@ public class Model
 	
 	
 
-	public void enemyTankPositionUpdate(TankPosUpdateScribeMsg updateMsg)
+	/*public void enemyTankPositionUpdate(TankPosUpdateScribeMsg updateMsg)
 	{
 		EnemyTank et = _enemyTanks.get(updateMsg.from.getId());
 		if(et != null)
 			et.updatePosistion(updateMsg.x, updateMsg.y, updateMsg.direction);
 		notifyObserver();
-	}
-	public void tankShotMsg(ShotScribeMsg shotMsg)
+	}*/
+	/*public void tankShotMsg(ShotScribeMsg shotMsg)
 	{
 		EnemyTank et = _enemyTanks.get(shotMsg.from.getId());
 		if(et != null)
 			et.shotEnemy();
 		notifyObserver();
-	}
+	}*/
 	public void recivedLeaveMsg(LeaveScribeMsg msg)
 	{
 		_enemyTanks.remove(msg.from.getId());
@@ -245,7 +256,7 @@ public class Model
 	
 
 	
-	public void shotEnemy()
+	/*public void shotEnemy()
 	{
 
 		if (this._hero.s.size() < 5) {
@@ -256,7 +267,7 @@ public class Model
 			
 			_hero.shotEnemy();
 		}
-	}
+	}*/
 	
 	// function to judge whether a bullet has shot the tank
 	public void hittank(Shot s, Tank enemyTank) {
@@ -343,7 +354,7 @@ public class Model
 				}
 				
 				if(frameNumber != -1 && System.currentTimeMillis()-lastMoveTime > 50 && !hasMoved) {
-					sendPosistionUpdate();
+					sendUpdate(false);
 					lastMoveTime = System.currentTimeMillis();
 				}
 					

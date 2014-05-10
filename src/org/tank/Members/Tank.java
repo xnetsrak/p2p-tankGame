@@ -36,6 +36,19 @@ public class Tank {
 		this.direct = w;
 	}
 	
+	public boolean hasNotFiredShots()
+	{
+		for(Shot shot : s)
+		{
+			if(!shot.isFired)
+			{
+				shot.isFired = true;
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public void shotEnemy() {
 		switch (this.getDirect()) {
 

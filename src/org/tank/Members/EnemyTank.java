@@ -1,8 +1,5 @@
 package org.tank.Members;
 
-import java.util.Random;
-import java.util.Vector;
-
 public class EnemyTank extends Tank {
 
 	/*public Vector<Shot> s = new Vector<Shot>();*/

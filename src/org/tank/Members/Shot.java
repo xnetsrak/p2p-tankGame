@@ -3,6 +3,7 @@ package org.tank.Members;
 public class Shot implements Runnable {
 	public int x, y, direct, speed, gameWidth, gameHeight;
 	public boolean isLive = true;
+	public boolean isFired = false;
 
 	public Shot(int x, int y, int direct, int speed, int gameWidth, int gameHeight) {
 		this.x = x;

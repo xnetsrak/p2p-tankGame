@@ -1,17 +1,13 @@
 package org.tank.Model;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-
-import org.tank.Members.EnemyTank;
+import java.util.Map;
 import org.tank.Members.Tank;
 import org.tank.Msg.CoordinatorUpdateMsg;
 import org.tank.Msg.JoinResponseMsg;
 import org.tank.Msg.JoinScribeMsg;
-import org.tank.Msg.JoinScribeResponseMsg;
 import org.tank.Msg.TankPositionUpdateMsg;
 
 import rice.p2p.commonapi.Id;
@@ -21,7 +17,7 @@ public class Coordinator
 {
 	public boolean _active = false;
 	public boolean _isCoordinator = false;
-	private HashMap<Id,Tank> _tanks = new HashMap<Id,Tank>();
+	private Map<Id,Tank> _tanks;
 	private org.tank.Model.PastryApp _pastryApp;
 	private PastryNode _pastryNode;
 	private Model _model;
@@ -30,6 +26,8 @@ public class Coordinator
 	
 	public Coordinator(PastryNode pastryNode, PastryApp pastryApp, Model model, boolean isCoo)
 	{
+		_tanks = Collections.synchronizedMap(new HashMap<Id,Tank>());
+		
 		_isCoordinator = isCoo;
 		this._pastryNode = pastryNode;
 		this._pastryApp = pastryApp;
@@ -39,6 +37,7 @@ public class Coordinator
 	public void start()
 	{
 		_active = true;
+		_tanks.clear();
 		Thread ct = new Thread(new CoordinatorThread());
 		ct.start();
 	}
@@ -58,7 +57,9 @@ public class Coordinator
 		_pastryApp.routeMyMsgDirect(joinMsg.from, jrm);
 		
 	}
-	
+	/*
+	 * Updates received from tanks
+	 */
 	public void tankUpdateRequest(TankPositionUpdateMsg recivedMsg)
 	{
 		if(recivedMsg.frameNumber != this.frameNumber)
@@ -66,11 +67,12 @@ public class Coordinator
 		
 		Tank tank = _tanks.get(recivedMsg.tankUpdate.Id);
 		if(tank != null && !tank.hasMoved) {
-			tank.updatePosistion(recivedMsg.tankUpdate.x, recivedMsg.tankUpdate.y, recivedMsg.tankUpdate.w);
+			if(recivedMsg.tankUpdate.fireShot)
+				tank.shotEnemy();
+			else
+				tank.updatePosistion(recivedMsg.tankUpdate.x, recivedMsg.tankUpdate.y, recivedMsg.tankUpdate.w);
 			tank.hasMoved = true;
 		}
-		
-		//retuner OK engang
 	}
 	
 	public void sendFrameUpdate()
@@ -95,7 +97,7 @@ public class Coordinator
 		for(Id id : _tanks.keySet())
 		{
 			Tank tank = _tanks.get(id);
-			TankUpdate tUpdate = new TankUpdate(tank.x, tank.y, tank.direct, id);
+			TankUpdate tUpdate = new TankUpdate(tank.x, tank.y, tank.direct, id, tank.hasNotFiredShots());
 			tanks.add(tUpdate);
 		}
 		TankUpdate[] stockArr = new TankUpdate[tanks.size()];
@@ -130,6 +132,14 @@ public class Coordinator
 							t.hasMoved = false;
 						}
 					}
+					
+					for (Id id : _tanks.keySet()) {
+						Tank tank = _tanks.get(id);
+						for(int j = 1; j <= tank.s.size(); j++)
+							if(!tank.s.get(j-1).isLive)
+								tank.s.remove(j - 1);
+					}
+					
 					_pastryNode.getEnvironment().getTimeSource().sleep(10);
 					
 				} catch (InterruptedException e) {

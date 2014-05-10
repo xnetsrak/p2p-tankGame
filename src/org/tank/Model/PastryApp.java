@@ -3,12 +3,9 @@ package org.tank.Model;
 import org.tank.Msg.CoordinatorUpdateMsg;
 import org.tank.Msg.JoinResponseMsg;
 import org.tank.Msg.JoinScribeMsg;
-import org.tank.Msg.JoinScribeResponseMsg;
 import org.tank.Msg.LeaveScribeMsg;
 import org.tank.Msg.MyMsg;
 import org.tank.Msg.MyScribeMsg;
-import org.tank.Msg.ShotScribeMsg;
-import org.tank.Msg.TankPosUpdateScribeMsg;
 import org.tank.Msg.TankPositionUpdateMsg;
 
 import rice.p2p.commonapi.Application;
@@ -26,6 +23,7 @@ import rice.p2p.scribe.ScribeImpl;
 import rice.p2p.scribe.Topic;
 import rice.pastry.commonapi.PastryIdFactory;
 
+@SuppressWarnings("deprecation")
 public class PastryApp implements Application, ScribeClient
 {
 	  protected Endpoint endpoint;
@@ -139,13 +137,6 @@ public class PastryApp implements Application, ScribeClient
 	    }
 	    else if(recivedMsg instanceof CoordinatorUpdateMsg) {
 	    	_model.coordinatorUpdateMsg((CoordinatorUpdateMsg)message);
-	    }
-	    
-	    else if(recivedMsg instanceof TankPosUpdateScribeMsg) {
-	    	_model.enemyTankPositionUpdate((TankPosUpdateScribeMsg)message);
-	    }
-	    else if(recivedMsg instanceof ShotScribeMsg) {
-	    	_model.tankShotMsg((ShotScribeMsg)message);
 	    }
 	    else if(recivedMsg instanceof LeaveScribeMsg) {
 	    	_model.recivedLeaveMsg((LeaveScribeMsg)message);
