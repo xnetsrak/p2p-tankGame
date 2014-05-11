@@ -86,9 +86,7 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 	    
 	}
 
-	public void update() {
-		// TODO Auto-generated method stub
-		
+	public void update() {		
 	}
 	
 }
@@ -142,9 +140,19 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 		//this.drawTank(20, 320, g, 0, 1);
 		//g.setColor(Color.black);
 		//g.drawString(enemyNum + " ", 45, 340);
-		this.drawTank(20, _model.getGameHeight()+20, g, 0, 0);
+		this.drawTank(20, _model.getGameHeight()+20, g, 0, _hero.color);
 		g.setColor(Color.black);
 		g.drawString(_myPoints + " ", 45, _model.getGameHeight()+40);
+		
+		int x = 100;
+		for(Id id : _enemyTanks.keySet())
+		{
+			Tank tank = _enemyTanks.get(id);
+			this.drawTank(x, _model.getGameHeight()+20, g, 0, tank.color);
+			g.setColor(Color.black);
+			g.drawString(tank.points + " ", x+25, _model.getGameHeight()+40);
+			x = x+55;
+		}
 	}
 
 	public void paint(Graphics g) 
@@ -157,7 +165,7 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 		g.drawRect(0, 0, _model.getGameWidth(), _model.getGameHeight());
 
 		//if (_myPoints > 0)
-		this.drawTank(_hero.getX(), _hero.getY(), g, _hero.getDirect(), 0);
+		this.drawTank(_hero.getX(), _hero.getY(), g, _hero.getDirect(), _hero.color);
 
 		for (int i = 1; i <= _hero.s.size(); i++) {
 
@@ -175,7 +183,7 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 		for(Id id : _enemyTanks.keySet())
 		{
 			if (_enemyTanks.get(id).isLive) {
-				this.drawTank(_enemyTanks.get(id).getX(), _enemyTanks.get(id).getY(), g, _enemyTanks.get(id).getDirect(), 1);
+				this.drawTank(_enemyTanks.get(id).getX(), _enemyTanks.get(id).getY(), g, _enemyTanks.get(id).getDirect(), _enemyTanks.get(id).color);
 
 				for (int j = 1; j <= _enemyTanks.get(id).s.size(); j++) {
 					if (_enemyTanks.get(id).s.get(j - 1).isLive == true) {
@@ -212,14 +220,9 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 		}
 	}
 
-	public void drawTank(int x, int y, Graphics g, int direct, int type) {
-		switch (type) {
-		case 0:
-			g.setColor(Color.yellow);
-			break;
-		case 1:
-			g.setColor(Color.blue);
-		}
+	public void drawTank(int x, int y, Graphics g, int direct, Color color) {
+
+		g.setColor(color);
 
 		switch (direct) {
 		case 0:
@@ -268,14 +271,14 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 			_model.changeHeroDirection(1);
 		
 		
-		this.repaint();
+		//this.repaint();
 	}
 
 	public void keyReleased(KeyEvent e) {
 		if (e.getKeyCode() == KeyEvent.VK_J)
 			_model.shotEnemy();
 		
-		this.repaint();
+		//this.repaint();
 	}
 
 	public void keyTyped(KeyEvent e) {

@@ -10,13 +10,15 @@ public class TankUpdate implements Serializable
 	public int w;
 	public rice.p2p.commonapi.Id Id;
 	public boolean fireShot = false;
+	public int points;
 	
-	public TankUpdate(int x, int y, int w, rice.p2p.commonapi.Id id, boolean shot)
+	public TankUpdate(int x, int y, int w, rice.p2p.commonapi.Id id, boolean shot, int points)
 	{
 		this.x = x;
 		this.y = y;
 		this.w = w;
 		this.Id = id;
 		this.fireShot = shot;
+		this.points = points;
 	}
 }

@@ -1,12 +1,14 @@
 package org.tank.Members;
 
+import java.awt.Color;
+import java.util.Random;
 import java.util.Vector;
 
 public class Tank {
 
 	// horizontal coordinate value for tank
 	public int x = 0;
-	public int color;
+	public Color color;
 	public boolean isLive = true;
 	public int direct = 1;
 	public int speed = 6;
@@ -14,6 +16,8 @@ public class Tank {
 	public int gameWidth;
 	public int gameHeight;
 	public boolean hasMoved = false;
+	public int points = 0;
+	Random rand = new Random();
 	
 	// vertical coordinate value
 	public int y = 0;
@@ -27,6 +31,7 @@ public class Tank {
 		this.direct = w;
 		this.gameWidth = gameWidth;
 		this.gameHeight = gameHeight;
+		
 	}
 	
 	public void updatePosistion(int x, int y, int w)
@@ -82,11 +87,11 @@ public class Tank {
 		}
 	}
 
-	public int getColor() {
+	public Color getColor() {
 		return color;
 	}
 
-	public void setColor(int color) {
+	public void setColor(Color color) {
 		this.color = color;
 	}
 

@@ -181,7 +181,7 @@ public class Model
 	
 	public void sendUpdate(boolean fireShot)
 	{
-		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), fireShot);
+		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), fireShot, myPoints);
 	    
 	    for(NodeHandle nh : _coordinatorIds) {
 	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
@@ -195,11 +195,15 @@ public class Model
 		for(TankUpdate tank : msg._tanks)
 		{
 			if(tank.Id.equals(_pastryApp.endpoint.getId()))
+			{
+				myPoints = tank.points;
 				continue;
+			}
 			
 			if(_enemyTanks.containsKey(tank.Id))
 			{
 				EnemyTank eTank = _enemyTanks.get(tank.Id);
+				eTank.points = tank.points;
 				eTank.updatePosistion(tank.x, tank.y, tank.w);
 				if(tank.fireShot)
 					eTank.shotEnemy();
@@ -213,33 +217,7 @@ public class Model
 		
 		notifyObserver();
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 
-	/*public void enemyTankPositionUpdate(TankPosUpdateScribeMsg updateMsg)
-	{
-		EnemyTank et = _enemyTanks.get(updateMsg.from.getId());
-		if(et != null)
-			et.updatePosistion(updateMsg.x, updateMsg.y, updateMsg.direction);
-		notifyObserver();
-	}*/
-	/*public void tankShotMsg(ShotScribeMsg shotMsg)
-	{
-		EnemyTank et = _enemyTanks.get(shotMsg.from.getId());
-		if(et != null)
-			et.shotEnemy();
-		notifyObserver();
-	}*/
 	public void recivedLeaveMsg(LeaveScribeMsg msg)
 	{
 		_enemyTanks.remove(msg.from.getId());
@@ -254,23 +232,8 @@ public class Model
 		
 
 	
-
-	
-	/*public void shotEnemy()
-	{
-
-		if (this._hero.s.size() < 5) {
-			
-			ShotScribeMsg sm = new ShotScribeMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
-		    _pastryApp.sendMulticast(sm);
-		    seqNum++;
-			
-			_hero.shotEnemy();
-		}
-	}*/
-	
 	// function to judge whether a bullet has shot the tank
-	public void hittank(Shot s, Tank enemyTank) {
+	public boolean hittank(Shot s, Tank enemyTank) {
 		boolean tankHit = false;
 		
 		switch (enemyTank.getDirect()) 
@@ -289,13 +252,11 @@ public class Model
 		if(tankHit)
 		{
 			s.isLive = false;
-			//enemyTank.isLive = false;
-
 			Bomb newbomb = new Bomb(enemyTank.getX(), enemyTank.getY());
 			_bombs.add(newbomb);
-			myPoints++;
 			notifyObserver();
 		}
+		return tankHit;
 	}
 
 	public void hitmytank(Shot s, Tank et) {
@@ -304,9 +265,7 @@ public class Model
 		case 2:
 			if (s.x >= et.x && s.x <= et.x + 20 && s.y >= et.y && s.y <= et.y + 30) {
 				s.isLive = false;
-				myPoints--;
 
-				// create a bomb
 				Bomb newbomb = new Bomb(et.getX(), et.getY());
 				_bombs.add(newbomb);
 				notifyObserver();
@@ -318,9 +277,7 @@ public class Model
 
 			if (s.x > et.x && s.x < et.x + 30 && s.y > et.y && s.y < et.y + 20) {
 				s.isLive = false;
-				setMyPoints(getMyPoints() - 1);
 
-				// create a bomb
 				Bomb newbomb = new Bomb(et.getX(), et.getY());
 				_bombs.add(newbomb);
 				notifyObserver();
@@ -339,6 +296,24 @@ public class Model
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
+				
+				//Tank hits
+				for(Id id1 : _enemyTanks.keySet())
+				{
+					Tank shootingTank = _enemyTanks.get(id1);
+					for (int j = 0; j < shootingTank.s.size(); j++)
+					{
+						for(Id id2 : _enemyTanks.keySet())
+						{
+							if(id1.equals(id2))
+								continue;
+							Tank hittingTank = _enemyTanks.get(id2);
+							hittank(shootingTank.s.get(j), hittingTank);
+						}
+					}
+					for (int j = 0; j < shootingTank.s.size(); j++)
+						hitmytank(shootingTank.s.get(j), _hero);
+				}
 
 				for(Id id : _enemyTanks.keySet())
 				{
@@ -346,12 +321,12 @@ public class Model
 						hittank(_hero.s.get(j), _enemyTanks.get(id));
 				}
 
-				for(Id id : _enemyTanks.keySet())
+				/*for(Id id : _enemyTanks.keySet())
 				{
 					EnemyTank t = _enemyTanks.get(id);
 					for (int j = 0; j < t.s.size(); j++)
 						hitmytank(t.s.get(j), _hero);
-				}
+				}*/
 				
 				if(frameNumber != -1 && System.currentTimeMillis()-lastMoveTime > 50 && !hasMoved) {
 					sendUpdate(false);
@@ -403,6 +378,35 @@ public class Model
 	public void setCoordinator(Coordinator _coordinator) { this._coordinator = _coordinator; }
 
 }
+
+
+/*public void enemyTankPositionUpdate(TankPosUpdateScribeMsg updateMsg)
+{
+	EnemyTank et = _enemyTanks.get(updateMsg.from.getId());
+	if(et != null)
+		et.updatePosistion(updateMsg.x, updateMsg.y, updateMsg.direction);
+	notifyObserver();
+}*/
+/*public void tankShotMsg(ShotScribeMsg shotMsg)
+{
+	EnemyTank et = _enemyTanks.get(shotMsg.from.getId());
+	if(et != null)
+		et.shotEnemy();
+	notifyObserver();
+}*/
+
+/*public void shotEnemy()
+{
+
+	if (this._hero.s.size() < 5) {
+		
+		ShotScribeMsg sm = new ShotScribeMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
+	    _pastryApp.sendMulticast(sm);
+	    seqNum++;
+		
+		_hero.shotEnemy();
+	}
+}*/
 
 /* 
 //Send Join Msgs to leaf

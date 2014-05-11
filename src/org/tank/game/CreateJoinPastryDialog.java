@@ -46,6 +46,7 @@ public class CreateJoinPastryDialog extends JFrame
 		  txtBootPort = new JTextField(20);
 		  txtMyPort.setText("9000");
 		  txtBootPort.setText("9000");
+		  //txtBootIp.setText("karsten-pc");
 		  
 		  cmdButton = new JButton("Join/Create");
 		  
