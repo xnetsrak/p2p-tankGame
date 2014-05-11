@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.tank.Members.Bomb;
 import org.tank.Members.Shot;
 import org.tank.Members.Tank;
 import org.tank.Msg.CoordinatorUpdateMsg;
