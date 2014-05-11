@@ -61,7 +61,7 @@ public class Model
 		this.gameWidth = gameWidth;
 		this.gameHeight = gameHeight;
 		
-		_hero = new Hero((int) (Math.random() * getGameWidth()-50),(int) (Math.random() * getGameHeight()-50), random.nextInt(4), gameWidth, gameHeight);
+		_hero = new Hero((int) (Math.random() * getGameWidth()),(int) (Math.random() * getGameHeight()), random.nextInt(4), gameWidth, gameHeight);
 		
 		Thread t = new Thread(new RunThread(), "RunThread");
 		t.start();
