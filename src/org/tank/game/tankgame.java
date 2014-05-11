@@ -275,7 +275,7 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 	}
 
 	public void keyReleased(KeyEvent e) {
-		if (e.getKeyCode() == KeyEvent.VK_J)
+		if (e.getKeyCode() == KeyEvent.VK_SPACE)
 			_model.shotEnemy();
 		
 		//this.repaint();
