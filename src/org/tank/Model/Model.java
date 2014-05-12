@@ -6,6 +6,8 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.tank.Members.Bomb;
 import org.tank.Members.EnemyTank;
@@ -191,9 +193,14 @@ public class Model
 	}
 	
 	public void coordinatorUpdateMsg(CoordinatorUpdateMsg msg)
-	{
+	{		
+		//clean dead tanks
+		Set<Id> updatedTanks = new TreeSet<Id>(_enemyTanks.keySet());
+		
 		for(TankUpdate tank : msg._tanks)
 		{
+			updatedTanks.remove(tank.Id);
+			
 			if(tank.Id.equals(_pastryApp.endpoint.getId()))
 			{
 				myPoints = tank.points;
@@ -215,6 +222,10 @@ public class Model
 		hasMoved = false;
 		lastMoveTime = System.currentTimeMillis();
 		
+		//clean dead tanks
+		for(Id id : updatedTanks)
+			_enemyTanks.remove(id);
+		
 		notifyObserver();
 	}
 
@@ -225,9 +236,14 @@ public class Model
 	}
 	public void leaveGame()
 	{
-	    LeaveScribeMsg lm = new LeaveScribeMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
-	    _pastryApp.sendMulticast(lm);
-	    seqNum++;
+		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), false, myPoints);
+	    
+	    for(NodeHandle nh : _coordinatorIds) {
+	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
+	    	updateMsg.leave = true;
+	    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
+	    }
+	    hasMoved = true;
 	}
 		
 

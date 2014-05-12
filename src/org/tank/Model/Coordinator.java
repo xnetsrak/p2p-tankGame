@@ -64,15 +64,18 @@ public class Coordinator
 	 */
 	public void tankUpdateRequest(TankPositionUpdateMsg recivedMsg)
 	{
-		if(recivedMsg.frameNumber != this.frameNumber)
+		if(recivedMsg.leave)
+			_tanks.remove(recivedMsg.tankUpdate.Id);
+		else if(recivedMsg.frameNumber != this.frameNumber)
 			return;
 		
-		Tank tank = _tanks.get(recivedMsg.tankUpdate.Id);
+		Tank tank = _tanks.get(recivedMsg.tankUpdate.Id);		
 		if(tank != null && !tank.hasMoved) {
 			if(recivedMsg.tankUpdate.fireShot)
 				tank.shotEnemy();
 			else
-				tank.updatePosistion(recivedMsg.tankUpdate.x, recivedMsg.tankUpdate.y, recivedMsg.tankUpdate.w);
+				if(tankPositionUpdateOk(tank, recivedMsg.tankUpdate.x, recivedMsg.tankUpdate.y, recivedMsg.tankUpdate.w))
+					tank.updatePosistion(recivedMsg.tankUpdate.x, recivedMsg.tankUpdate.y, recivedMsg.tankUpdate.w);
 			tank.hasMoved = true;
 		}
 	}
@@ -105,6 +108,18 @@ public class Coordinator
 		TankUpdate[] stockArr = new TankUpdate[tanks.size()];
 		stockArr = tanks.toArray(stockArr);
 		return stockArr;
+	}
+	
+	private boolean tankPositionUpdateOk(Tank tank, int newX, int newY, int newDirection)
+	{
+		if(		(tank.x == newX && tank.y == newY) || 
+				(tank.x == newX && tank.y-tank.speed == newY) ||
+				(tank.x == newX && tank.y+tank.speed == newY) ||
+				(tank.x-tank.speed == newX && tank.y == newY) ||
+				(tank.x+tank.speed == newX && tank.y == newY))
+				return true;
+		
+		return false;
 	}
 	
 	private boolean recivedAllUpdates() 
