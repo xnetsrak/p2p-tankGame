@@ -11,9 +11,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.util.*;
 
-public class tankgame extends JFrame implements ActionListener, org.tank.Model.Observer
+public class tankgame extends JFrame implements ActionListener, WindowListener, org.tank.Model.Observer
 {
 	private static final long serialVersionUID = 1L;
 	MyPanel mp = null;
@@ -51,6 +53,7 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 		this.setTitle("P2P tankGame");
 		this.setSize(width+200, height+200);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.addWindowListener(this);
 		this.setVisible(true);
 		
 		_model = new Model(width, height);
@@ -88,6 +91,16 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 
 	public void update() {		
 	}
+
+	public void windowActivated(WindowEvent arg0) {}
+	public void windowClosed(WindowEvent arg0) {}
+	public void windowClosing(WindowEvent arg0) {
+		_model.leaveGame();
+	}
+	public void windowDeactivated(WindowEvent arg0) {}
+	public void windowDeiconified(WindowEvent arg0) {}
+	public void windowIconified(WindowEvent arg0) {}
+	public void windowOpened(WindowEvent arg0) {}
 	
 }
 
