@@ -236,17 +236,22 @@ public class Model
 	}
 	public void leaveGame()
 	{
-		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), false, myPoints);
-	    
-	    for(NodeHandle nh : _coordinatorIds) {
-	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
-	    	updateMsg.leave = true;
-	    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
-	    }
-	    hasMoved = true;
+		try
+		{
+			TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), false, myPoints);
+		    
+		    for(NodeHandle nh : _coordinatorIds) {
+		    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
+		    	updateMsg.leave = true;
+		    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
+		    }
+		    hasMoved = true;
+		}
+		catch(Exception ex)
+		{
+			
+		}
 	}
-		
-
 	
 	// function to judge whether a bullet has shot the tank
 	public boolean hittank(Shot s, Tank enemyTank) {
