@@ -198,7 +198,8 @@ public class Coordinator
 						}
 					}
 					
-					_pastryNode.getEnvironment().getTimeSource().sleep(10);
+					Thread.sleep(10);
+					//_pastryNode.getEnvironment().getTimeSource().sleep(10);
 					
 				} catch (InterruptedException e) {
 					e.printStackTrace();
