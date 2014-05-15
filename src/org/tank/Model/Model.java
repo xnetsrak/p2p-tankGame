@@ -54,7 +54,7 @@ public class Model
 	private boolean hasMoved = false;
 
 	private Coordinator _coordinator = null;
-	private ArrayList<NodeHandle> _coordinatorIds = new ArrayList<NodeHandle>();
+	private HashMap<NodeHandle, CoordinatorInfo> _coordinatorIds = new HashMap<NodeHandle, CoordinatorInfo>();
 	
 	private status currStatus = new status();
 	
@@ -141,7 +141,7 @@ public class Model
 	
 	public void tankJoinResponse(JoinResponseMsg msg)
 	{
-		_coordinatorIds.add(msg.fromNodeHandle);
+		_coordinatorIds.put(msg.fromNodeHandle, new CoordinatorInfo(msg.frameNumber, null));
 		frameNumber = msg.frameNumber;
 	}
 	
@@ -183,17 +183,19 @@ public class Model
 	
 	public void sendUpdate(boolean fireShot)
 	{
-		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), fireShot, myPoints);
+		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), fireShot, myPoints, true);
 	    
-	    for(NodeHandle nh : _coordinatorIds) {
+	    for(NodeHandle nh : _coordinatorIds.keySet()) {
 	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
 	    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
+	    	_coordinatorIds.get(nh).clearLastMessage();
 	    }
 		hasMoved = true;
 	}
 	
 	public void coordinatorUpdateMsg(CoordinatorUpdateMsg msg)
 	{		
+		
 		//clean dead tanks
 		Set<Id> updatedTanks = new TreeSet<Id>(_enemyTanks.keySet());
 		
@@ -226,7 +228,41 @@ public class Model
 		for(Id id : updatedTanks)
 			_enemyTanks.remove(id);
 		
+		/*if(_coordinator != null && !_coordinator._active)
+		{
+			_coordinator.setTanks(msg._tanks);
+			_coordinator.setFrameNumber(msg.newFrameNumber);
+			_coordinator.start();
+		}*/
+		
 		notifyObserver();
+	}
+	
+	public void coordinatorMsgRecived(CoordinatorUpdateMsg msg)
+	{
+		coordinatorUpdateMsg(msg);
+		
+		/*
+		if(_coordinatorIds.containsKey(msg.from)) {
+			CoordinatorInfo cInfo = _coordinatorIds.get(msg.from);
+			cInfo.updateMsg = msg;
+		}
+		
+		if(allAnswersRecived()) {
+			writeInfo();
+			coordinatorUpdateMsg(msg);
+		}
+		
+		for(TankUpdate tank : msg._tanks)
+		{
+			if(tank.isCoordinator && !_coordinatorIds.containsKey(msg.from)) {
+				_coordinatorIds.put(msg.from, new CoordinatorInfo(msg.newFrameNumber, null));
+				System.out.println("------ adding new coordinator!");
+			}
+			if(tank.isCoordinator && tank.Id.equals(_pastryApp.endpoint.getId()) && _coordinator == null)
+				_coordinator = new Coordinator(_pastryNode, _pastryApp, this, true);
+		}*/
+		
 	}
 
 	public void recivedLeaveMsg(LeaveScribeMsg msg)
@@ -238,12 +274,13 @@ public class Model
 	{
 		try
 		{
-			TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), false, myPoints);
+			TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), false, myPoints, true);
 		    
-		    for(NodeHandle nh : _coordinatorIds) {
+		    for(NodeHandle nh : _coordinatorIds.keySet()) {
 		    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
 		    	updateMsg.leave = true;
 		    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
+		    	_coordinatorIds.get(nh).clearLastMessage();
 		    }
 		    hasMoved = true;
 		}
@@ -341,21 +378,48 @@ public class Model
 					for (int j = 0; j < _hero.s.size(); j++)
 						hittank(_hero.s.get(j), _enemyTanks.get(id));
 				}
-
-				/*for(Id id : _enemyTanks.keySet())
-				{
-					EnemyTank t = _enemyTanks.get(id);
-					for (int j = 0; j < t.s.size(); j++)
-						hitmytank(t.s.get(j), _hero);
-				}*/
+				
 				
 				if(frameNumber != -1 && System.currentTimeMillis()-lastMoveTime > 50 && !hasMoved) {
 					sendUpdate(false);
 					lastMoveTime = System.currentTimeMillis();
 				}
-					
+				/*if(allAnswersRecived())
+				{
+					writeInfo();
+					for(NodeHandle nh : _coordinatorIds.keySet()) {
+						coordinatorUpdateMsg(_coordinatorIds.get(nh).updateMsg);
+						break;
+					}
+					for(NodeHandle nh : _coordinatorIds.keySet()) {
+						_coordinatorIds.get(nh).updateMsg = null;
+					}
+				}*/
 
 			}
+		}
+	}
+	
+	public boolean allAnswersRecived()
+	{
+		if(_coordinatorIds.keySet().size() < 1)
+			return false;
+		
+		boolean result = false;
+		for(NodeHandle nh : _coordinatorIds.keySet()) {
+			if(_coordinatorIds.get(nh).updateMsg != null)
+				result = true;
+			else
+				return false;
+		}
+		return result;
+	}
+	
+	public void writeInfo()
+	{
+		for(NodeHandle nh : _coordinatorIds.keySet()) {
+			frameNumber = _coordinatorIds.get(nh).updateMsg.newFrameNumber;
+			System.out.println("size: " + _coordinatorIds.keySet().size() + " " + nh.getId() + " --- Framenumber: " + frameNumber);
 		}
 	}
 	
@@ -400,6 +464,12 @@ public class Model
 
 }
 
+/*for(Id id : _enemyTanks.keySet())
+{
+	EnemyTank t = _enemyTanks.get(id);
+	for (int j = 0; j < t.s.size(); j++)
+		hitmytank(t.s.get(j), _hero);
+}*/
 
 /*public void enemyTankPositionUpdate(TankPosUpdateScribeMsg updateMsg)
 {

@@ -16,6 +16,7 @@ public class Tank {
 	public int gameWidth;
 	public int gameHeight;
 	public boolean hasMoved = false;
+	public boolean isCoordinator = false;
 	public int points = 0;
 	Random rand = new Random();
 	

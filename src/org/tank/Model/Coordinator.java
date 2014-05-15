@@ -13,6 +13,7 @@ import org.tank.Msg.JoinScribeMsg;
 import org.tank.Msg.TankPositionUpdateMsg;
 
 import rice.p2p.commonapi.Id;
+import rice.p2p.commonapi.NodeHandle;
 import rice.pastry.PastryNode;
 
 public class Coordinator
@@ -25,6 +26,7 @@ public class Coordinator
 	private Model _model;
 	private int seqNum = 0;
 	private int frameNumber = 0;
+	private int coordinatorSize = 0;
 	
 	public Coordinator(PastryNode pastryNode, PastryApp pastryApp, Model model, boolean isCoo)
 	{
@@ -39,11 +41,22 @@ public class Coordinator
 	public void start()
 	{
 		_active = true;
-		_tanks.clear();
 		Thread ct = new Thread(new CoordinatorThread());
 		ct.start();
 	}
-	
+	public void setTanks(TankUpdate[] tanks)
+	{
+		_tanks.clear();
+		for(TankUpdate tank : tanks)
+		{
+			if(_tanks.get(tank.Id) == null) {
+				Tank et = new Tank(tank.x, tank.y, tank.w, _model.getGameWidth(), _model.getGameHeight());
+				et.hasMoved = true;
+				_tanks.put(tank.Id, et);
+			}
+		}
+	}
+
 	public void tankJoin(JoinScribeMsg joinMsg)
 	{
 		//if(joinMsg.from.equals(_pastryApp.endpoint.getLocalNodeHandle()))
@@ -52,6 +65,8 @@ public class Coordinator
 		if(_tanks.get(joinMsg.from) == null) {
 			Tank et = new Tank(joinMsg.x, joinMsg.y, joinMsg.direction, _model.getGameWidth(), _model.getGameHeight());
 			et.hasMoved = true;
+			if(newCoordinator())
+				et.isCoordinator = true;
 			_tanks.put(joinMsg.from.getId(), et);
 		}
 		
@@ -102,12 +117,21 @@ public class Coordinator
 		for(Id id : _tanks.keySet())
 		{
 			Tank tank = _tanks.get(id);
-			TankUpdate tUpdate = new TankUpdate(tank.x, tank.y, tank.direct, id, tank.hasNotFiredShots(), tank.points);
+			TankUpdate tUpdate = new TankUpdate(tank.x, tank.y, tank.direct, id, tank.hasNotFiredShots(), tank.points, tank.isCoordinator);
 			tanks.add(tUpdate);
 		}
 		TankUpdate[] stockArr = new TankUpdate[tanks.size()];
 		stockArr = tanks.toArray(stockArr);
 		return stockArr;
+	}
+	
+	public boolean newCoordinator()
+	{
+		int cooSize = 0;
+		for(Id id : _tanks.keySet())
+			if(_tanks.get(id).isCoordinator)
+				cooSize++;
+		return cooSize < coordinatorSize;
 	}
 	
 	private boolean tankPositionUpdateOk(Tank tank, int newX, int newY, int newDirection)
@@ -129,7 +153,7 @@ public class Coordinator
 			if(!t.hasMoved)
 				return false;
 		}
-		return true;
+		return _tanks.size() > 0 ? true : false;
 	}
 	
 	public boolean hittank(Shot s, Tank tank) {
@@ -208,6 +232,14 @@ public class Coordinator
 			
 		}
 		
+	}
+	
+	public int getFrameNumber() {
+		return frameNumber;
+	}
+
+	public void setFrameNumber(int frameNumber) {
+		this.frameNumber = frameNumber;
 	}
 	
 }
