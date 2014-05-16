@@ -72,12 +72,10 @@ public class Coordinator
 		if(_tanks.get(joinMsg.from) == null) {
 			Tank et = new Tank(joinMsg.x, joinMsg.y, joinMsg.direction, _model.getGameWidth(), _model.getGameHeight());
 			et.hasMoved = true;
-			if(newCoordinator())
-				et.isCoordinator = true;
 			_tanks.put(joinMsg.from.getId(), et);
 		}
 		
-		JoinResponseMsg jrm = new JoinResponseMsg(_pastryApp.endpoint.getId(), joinMsg.from.getId(),_pastryApp.endpoint.getLocalNodeHandle(), true, frameNumber);
+		JoinResponseMsg jrm = new JoinResponseMsg(_pastryApp.endpoint.getId(), joinMsg.from.getId(),_pastryApp.endpoint.getLocalNodeHandle(), newCoordinator(), frameNumber+10);
 		_pastryApp.routeMyMsgDirect(joinMsg.from, jrm);
 		
 	}
@@ -88,8 +86,17 @@ public class Coordinator
 	{
 		if(recivedMsg.leave)
 			_tanks.remove(recivedMsg.tankUpdate.Id);
-		else if(recivedMsg.frameNumber != this.frameNumber) {
+		else if(recivedMsg.frameNumber < this.frameNumber) {
+			if(recivedMsg.reSendFrame)
+				reSendFrame();
 			return;
+		}
+		else if(recivedMsg.frameNumber > this.frameNumber)
+		{
+			Tank tank = _tanks.get(recivedMsg.tankUpdate.Id);		
+			if(tank != null && !tank.hasMoved) {
+				tank.hasMoved = true;
+			}
 		}
 		
 		Tank tank = _tanks.get(recivedMsg.tankUpdate.Id);		
@@ -101,6 +108,14 @@ public class Coordinator
 					tank.updatePosistion(recivedMsg.tankUpdate.x, recivedMsg.tankUpdate.y, recivedMsg.tankUpdate.w);
 			tank.hasMoved = true;
 		}
+	}
+	
+	public void reSendFrame()
+	{
+		CoordinatorUpdateMsg updateMsg = new CoordinatorUpdateMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum, frameNumber-1, this.frameNumber);
+		updateMsg.setTank(getTanksUpdate());
+		_pastryApp.sendMulticast(updateMsg, this.frameNumber-1);
+		seqNum++;
 	}
 	
 	public void sendFrameUpdate()
@@ -135,11 +150,13 @@ public class Coordinator
 	
 	public boolean newCoordinator()
 	{
-		int cooSize = 0;
+		int size = _tanks.keySet().size();
+		return size <= coordinatorSize;
+		/*int cooSize = 0;
 		for(Id id : _tanks.keySet())
 			if(_tanks.get(id).isCoordinator)
 				cooSize++;
-		return cooSize < coordinatorSize;
+		return cooSize < coordinatorSize;*/
 	}
 	
 	private boolean tankPositionUpdateOk(Tank tank, int newX, int newY, int newDirection)

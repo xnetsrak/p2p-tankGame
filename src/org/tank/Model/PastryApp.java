@@ -47,7 +47,7 @@ public class PastryApp implements Application, ScribeClient
 	    myTopic = new Topic(new PastryIdFactory(node.getEnvironment()), "Zone1Topic");
 	    System.out.println("myTopic = "+myTopic);
 	    
-	    this.subscribe();
+	    //this.subscribe();
 	    this.endpoint.register();  // now we can receive messages
 	  }
 

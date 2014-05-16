@@ -10,6 +10,7 @@ public class TankPositionUpdateMsg extends MyMsg
 	public TankUpdate tankUpdate;
 	public int frameNumber;
 	public boolean leave = false;
+	public boolean reSendFrame = false;
 
 	public TankPositionUpdateMsg(Id from, Id to, TankUpdate tankUpdate, int frameNumber) 
 	{

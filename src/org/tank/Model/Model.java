@@ -52,6 +52,8 @@ public class Model
 	private int frameNumber = -1;
 	private long lastMoveTime = 0;
 	private boolean hasMoved = false;
+	public boolean started = false;
+	public TankPositionUpdateMsg lastFrame = null;
 
 	private Coordinator _coordinator = null;
 	private HashMap<NodeHandle, CoordinatorInfo> _coordinatorIds = new HashMap<NodeHandle, CoordinatorInfo>();
@@ -64,6 +66,13 @@ public class Model
 		this.gameHeight = gameHeight;
 		
 		_hero = new Hero((int) (Math.random() * getGameWidth()),(int) (Math.random() * getGameHeight()), random.nextInt(4), gameWidth, gameHeight);
+		
+	}
+	
+	public void go()
+	{
+		try { Thread.sleep(1000); } catch(Exception ex) {};
+		_pastryApp.subscribe();
 		
 		Thread t = new Thread(new RunThread(), "RunThread");
 		t.start();
@@ -131,6 +140,8 @@ public class Model
 	    	_coordinator.start();
 	    }
 	    
+	    go();
+	    
 	    JoinScribeMsg jm = new JoinScribeMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
 	    jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
 	    _pastryApp.sendMulticast(jm, this.frameNumber);
@@ -141,13 +152,16 @@ public class Model
 	
 	public void tankJoinResponse(JoinResponseMsg msg)
 	{
+		System.out.println("JoinResponse from: " + msg.fromNodeHandle);
 		_coordinatorIds.put(msg.fromNodeHandle, new CoordinatorInfo(msg.frameNumber, null));
-		frameNumber = msg.frameNumber;
+		frameNumber = msg.frameNumber > frameNumber ? msg.frameNumber : frameNumber;
+		if(msg.isCoordinator && _coordinator == null)
+			_coordinator = new Coordinator(_pastryNode, _pastryApp, this, true);
 	}
 	
 	public void changeHeroDirection(int direction)
 	{
-		if(hasMoved)
+		if(hasMoved || !started)
 			return;
 		
 		switch (direction) {
@@ -174,20 +188,21 @@ public class Model
 	}
 	public void shotEnemy()
 	{
-		if(hasMoved)
+		if(hasMoved || !started)
 			return;
 		
 		_hero.shotEnemy();
 		sendUpdate(true);
 	}
 	
-	public void sendUpdate(boolean fireShot)
+	public synchronized void sendUpdate(boolean fireShot)
 	{
-		setLargestFramenumber();
+		//setLargestFramenumber();
 		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), fireShot, myPoints, _coordinator != null);
 	    
 	    for(NodeHandle nh : _coordinatorIds.keySet()) {
 	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
+	    	lastFrame = updateMsg;
 	    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
 	    	_coordinatorIds.get(nh).clearLastMessage();
 	    	System.out.println("Sending update to Coordinator: " + nh + " fn: " + this.frameNumber);
@@ -196,7 +211,7 @@ public class Model
 		
 	}
 	
-	public void coordinatorUpdateMsg(CoordinatorUpdateMsg msg)
+	public synchronized void coordinatorUpdateMsg(CoordinatorUpdateMsg msg)
 	{		
 		
 		//clean dead tanks
@@ -241,10 +256,16 @@ public class Model
 		notifyObserver();
 	}
 	
-	public void coordinatorMsgRecived(CoordinatorUpdateMsg msg)
+	public synchronized void coordinatorMsgRecived(CoordinatorUpdateMsg msg)
 	{
 		//coordinatorUpdateMsg(msg);
 		System.out.println("Reciving update from Coordinator: " + msg.from + "  newFn: " + msg.newFrameNumber);
+		if(msg.newFrameNumber < this.frameNumber) {
+			hasMoved = false;
+			return;
+		}
+		else
+			started = true;
 		
 		if(_coordinatorIds.containsKey(msg.from)) {
 			CoordinatorInfo cInfo = _coordinatorIds.get(msg.from);
@@ -256,20 +277,17 @@ public class Model
 			System.out.println("------ adding new coordinator!");
 		}
 		
-		for(TankUpdate tank : msg._tanks)
+		/*for(TankUpdate tank : msg._tanks)
 		{
 			if(tank.isCoordinator && tank.Id.equals(_pastryApp.endpoint.getId()) && _coordinator == null)
 				_coordinator = new Coordinator(_pastryNode, _pastryApp, this, true);
-		}
+		}*/
 			
 		if(allAnswersRecived()) {
 			writeInfo();
 			for(NodeHandle nh : _coordinatorIds.keySet()) {
 				coordinatorUpdateMsg(_coordinatorIds.get(nh).getUpdateMsg());
 				break;
-			}
-			for(NodeHandle nh : _coordinatorIds.keySet()) {
-				_coordinatorIds.get(nh).setUpdateMsg(null);
 			}
 		}
 	}
@@ -303,26 +321,34 @@ public class Model
 	public boolean hittank(Shot s, Tank enemyTank) {
 		boolean tankHit = false;
 		
-		switch (enemyTank.getDirect()) 
+		try
 		{
-			case 0:
-			case 2:
-				if (s.x >= enemyTank.x && s.x <= enemyTank.x + 20 && s.y >= enemyTank.y && s.y <= enemyTank.y + 30)
-					tankHit = true;
-				break;
-			case 1:
-			case 3:
-				if (s.x > enemyTank.x && s.x < enemyTank.x + 30 && s.y > enemyTank.y && s.y < enemyTank.y + 20)
-					tankHit = true;
-				
+			switch (enemyTank.getDirect()) 
+			{
+				case 0:
+				case 2:
+					if (s.x >= enemyTank.x && s.x <= enemyTank.x + 20 && s.y >= enemyTank.y && s.y <= enemyTank.y + 30)
+						tankHit = true;
+					break;
+				case 1:
+				case 3:
+					if (s.x > enemyTank.x && s.x < enemyTank.x + 30 && s.y > enemyTank.y && s.y < enemyTank.y + 20)
+						tankHit = true;
+					
+			}
+			if(tankHit)
+			{
+				s.isLive = false;
+				Bomb newbomb = new Bomb(enemyTank.getX(), enemyTank.getY());
+				_bombs.add(newbomb);
+				notifyObserver();
+			}
 		}
-		if(tankHit)
+		catch(Exception ex)
 		{
-			s.isLive = false;
-			Bomb newbomb = new Bomb(enemyTank.getX(), enemyTank.getY());
-			_bombs.add(newbomb);
-			notifyObserver();
+			ex.printStackTrace();
 		}
+		
 		return tankHit;
 	}
 
@@ -404,6 +430,13 @@ public class Model
 						_coordinatorIds.get(nh).setUpdateMsg(null);
 					}
 				}*/
+				
+				if(reSendPreviousFrame() != null)
+				{
+					NodeHandle nh = reSendPreviousFrame();
+					lastFrame.reSendFrame = true;
+					_pastryApp.routeMyMsgDirect(nh, lastFrame);
+				}
 			}
 		}
 	}
@@ -423,6 +456,18 @@ public class Model
 		return result;
 	}
 	
+	public NodeHandle reSendPreviousFrame()
+	{
+		if(System.currentTimeMillis()-lastMoveTime > 3000 && started)
+		{
+			for(NodeHandle nh : _coordinatorIds.keySet()) {
+				if(_coordinatorIds.get(nh).getUpdateMsg() == null)
+					return nh; 
+			}
+		}
+		return null;
+	}
+	
 	public void writeInfo()
 	{
 		System.out.println("-Coordinator-size: " + _coordinatorIds.keySet().size());
@@ -437,6 +482,11 @@ public class Model
 			int fn = _coordinatorIds.get(nh).frameNumber;
 			if(fn > this.frameNumber) this.frameNumber = fn;
 		}
+	}
+	public void setFrameNumber(int number, NodeHandle nh)
+	{
+		if(this.frameNumber < number && _coordinatorIds.containsKey(nh))
+			this.frameNumber = number;
 	}
 	
 	public void addObserver(Observer obs)
