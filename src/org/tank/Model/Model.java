@@ -133,7 +133,7 @@ public class Model
 	    
 	    JoinScribeMsg jm = new JoinScribeMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum);
 	    jm.setPosistion(_hero.getX(), _hero.getY(), _hero.getDirect());
-	    _pastryApp.sendMulticast(jm);
+	    _pastryApp.sendMulticast(jm, this.frameNumber);
 	    seqNum++;
 	    
 	    return _pastryNode != null && _pastryApp != null;
@@ -183,6 +183,7 @@ public class Model
 	
 	public void sendUpdate(boolean fireShot)
 	{
+		setLargestFramenumber();
 		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), fireShot, myPoints, _coordinator != null);
 	    
 	    for(NodeHandle nh : _coordinatorIds.keySet()) {
@@ -197,7 +198,6 @@ public class Model
 	
 	public void coordinatorUpdateMsg(CoordinatorUpdateMsg msg)
 	{		
-		System.out.println("Reciving update from Coordinator: " + msg.from + "  newFn: " + msg.newFrameNumber);
 		
 		//clean dead tanks
 		Set<Id> updatedTanks = new TreeSet<Id>(_enemyTanks.keySet());
@@ -244,9 +244,11 @@ public class Model
 	public void coordinatorMsgRecived(CoordinatorUpdateMsg msg)
 	{
 		//coordinatorUpdateMsg(msg);
+		System.out.println("Reciving update from Coordinator: " + msg.from + "  newFn: " + msg.newFrameNumber);
 		
 		if(_coordinatorIds.containsKey(msg.from)) {
 			CoordinatorInfo cInfo = _coordinatorIds.get(msg.from);
+			cInfo.frameNumber = msg.newFrameNumber;
 			cInfo.setUpdateMsg(msg);
 		}
 		else {
@@ -260,10 +262,16 @@ public class Model
 				_coordinator = new Coordinator(_pastryNode, _pastryApp, this, true);
 		}
 			
-		/*if(allAnswersRecived()) {
+		if(allAnswersRecived()) {
 			writeInfo();
-			coordinatorUpdateMsg(msg);
-		}*/
+			for(NodeHandle nh : _coordinatorIds.keySet()) {
+				coordinatorUpdateMsg(_coordinatorIds.get(nh).getUpdateMsg());
+				break;
+			}
+			for(NodeHandle nh : _coordinatorIds.keySet()) {
+				_coordinatorIds.get(nh).setUpdateMsg(null);
+			}
+		}
 	}
 
 	public void recivedLeaveMsg(LeaveScribeMsg msg)
@@ -380,15 +388,14 @@ public class Model
 						hittank(_hero.s.get(j), _enemyTanks.get(id));
 				}
 				
-				/*
+				
 				if(frameNumber != -1 && System.currentTimeMillis()-lastMoveTime > 50 && !hasMoved) {
 					sendUpdate(false);
 					lastMoveTime = System.currentTimeMillis();
 				}
-				*/
+				/*
 				if(allAnswersRecived())
 				{
-					writeInfo();
 					for(NodeHandle nh : _coordinatorIds.keySet()) {
 						coordinatorUpdateMsg(_coordinatorIds.get(nh).getUpdateMsg());
 						break;
@@ -396,8 +403,7 @@ public class Model
 					for(NodeHandle nh : _coordinatorIds.keySet()) {
 						_coordinatorIds.get(nh).setUpdateMsg(null);
 					}
-				}
-
+				}*/
 			}
 		}
 	}
@@ -419,9 +425,17 @@ public class Model
 	
 	public void writeInfo()
 	{
+		System.out.println("-Coordinator-size: " + _coordinatorIds.keySet().size());
 		for(NodeHandle nh : _coordinatorIds.keySet()) {
-			frameNumber = _coordinatorIds.get(nh).getUpdateMsg().newFrameNumber;
-			System.out.println("size: " + _coordinatorIds.keySet().size() + " " + nh.getId() + " --- Framenumber: " + frameNumber);
+			int fn = _coordinatorIds.get(nh).getUpdateMsg() != null ? _coordinatorIds.get(nh).frameNumber : -2;
+			System.out.println("--coor id: " + nh.getId() + "  Framenumber: " + fn);
+		}
+	}
+	public void setLargestFramenumber()
+	{
+		for(NodeHandle nh : _coordinatorIds.keySet()) {
+			int fn = _coordinatorIds.get(nh).frameNumber;
+			if(fn > this.frameNumber) this.frameNumber = fn;
 		}
 	}
 	

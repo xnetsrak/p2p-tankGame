@@ -107,8 +107,8 @@ public class PastryApp implements Application, ScribeClient
 	  }
 	  
 	  /* Sends the multicast message.*/
-	  public void sendMulticast(MyScribeMsg msg) {
-			System.out.println("Node "+endpoint.getLocalNodeHandle()+" broadcasting "+seqNum);
+	  public void sendMulticast(MyScribeMsg msg, int frameNumber) {
+			System.out.println("Node "+endpoint.getLocalNodeHandle()+" broadcasting frame: "+ frameNumber);
 			myScribe.publish(myTopic, msg);
 	  }
 	  
