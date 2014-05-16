@@ -5,7 +5,7 @@ import org.tank.Msg.CoordinatorUpdateMsg;
 public class CoordinatorInfo 
 {
 	public int frameNumber;
-	public CoordinatorUpdateMsg updateMsg = null;
+	private CoordinatorUpdateMsg updateMsg = null;
 	
 	public CoordinatorInfo(int frameNumber, CoordinatorUpdateMsg msg)
 	{
@@ -20,5 +20,13 @@ public class CoordinatorInfo
 	public boolean msgRecived()
 	{
 		return updateMsg != null;
+	}
+	public void setUpdateMsg(CoordinatorUpdateMsg msg)
+	{
+		this.updateMsg = msg;
+	}
+	public CoordinatorUpdateMsg getUpdateMsg()
+	{
+		return updateMsg;
 	}
 }

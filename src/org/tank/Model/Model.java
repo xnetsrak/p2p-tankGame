@@ -183,18 +183,21 @@ public class Model
 	
 	public void sendUpdate(boolean fireShot)
 	{
-		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), fireShot, myPoints, true);
+		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), fireShot, myPoints, _coordinator != null);
 	    
 	    for(NodeHandle nh : _coordinatorIds.keySet()) {
 	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
 	    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
 	    	_coordinatorIds.get(nh).clearLastMessage();
+	    	System.out.println("Sending update to Coordinator: " + nh + " fn: " + this.frameNumber);
 	    }
 		hasMoved = true;
+		
 	}
 	
 	public void coordinatorUpdateMsg(CoordinatorUpdateMsg msg)
 	{		
+		System.out.println("Reciving update from Coordinator: " + msg.from + "  newFn: " + msg.newFrameNumber);
 		
 		//clean dead tanks
 		Set<Id> updatedTanks = new TreeSet<Id>(_enemyTanks.keySet());
@@ -220,49 +223,47 @@ public class Model
 			else
 				_enemyTanks.put(tank.Id, new EnemyTank(tank.x, tank.y, tank.w, this.gameWidth, this.gameHeight));
 		}
-		this.frameNumber = msg.newFrameNumber;
-		hasMoved = false;
-		lastMoveTime = System.currentTimeMillis();
 		
 		//clean dead tanks
 		for(Id id : updatedTanks)
 			_enemyTanks.remove(id);
 		
-		/*if(_coordinator != null && !_coordinator._active)
+		if(_coordinator != null && !_coordinator._active)
 		{
 			_coordinator.setTanks(msg._tanks);
 			_coordinator.setFrameNumber(msg.newFrameNumber);
 			_coordinator.start();
-		}*/
+		}
 		
+		this.frameNumber = msg.newFrameNumber;
+		hasMoved = false;
+		lastMoveTime = System.currentTimeMillis();
 		notifyObserver();
 	}
 	
 	public void coordinatorMsgRecived(CoordinatorUpdateMsg msg)
 	{
-		coordinatorUpdateMsg(msg);
+		//coordinatorUpdateMsg(msg);
 		
-		/*
 		if(_coordinatorIds.containsKey(msg.from)) {
 			CoordinatorInfo cInfo = _coordinatorIds.get(msg.from);
-			cInfo.updateMsg = msg;
+			cInfo.setUpdateMsg(msg);
 		}
-		
-		if(allAnswersRecived()) {
-			writeInfo();
-			coordinatorUpdateMsg(msg);
+		else {
+			_coordinatorIds.put(msg.from, new CoordinatorInfo(msg.newFrameNumber, msg));
+			System.out.println("------ adding new coordinator!");
 		}
 		
 		for(TankUpdate tank : msg._tanks)
 		{
-			if(tank.isCoordinator && !_coordinatorIds.containsKey(msg.from)) {
-				_coordinatorIds.put(msg.from, new CoordinatorInfo(msg.newFrameNumber, null));
-				System.out.println("------ adding new coordinator!");
-			}
 			if(tank.isCoordinator && tank.Id.equals(_pastryApp.endpoint.getId()) && _coordinator == null)
 				_coordinator = new Coordinator(_pastryNode, _pastryApp, this, true);
+		}
+			
+		/*if(allAnswersRecived()) {
+			writeInfo();
+			coordinatorUpdateMsg(msg);
 		}*/
-		
 	}
 
 	public void recivedLeaveMsg(LeaveScribeMsg msg)
@@ -379,22 +380,23 @@ public class Model
 						hittank(_hero.s.get(j), _enemyTanks.get(id));
 				}
 				
-				
+				/*
 				if(frameNumber != -1 && System.currentTimeMillis()-lastMoveTime > 50 && !hasMoved) {
 					sendUpdate(false);
 					lastMoveTime = System.currentTimeMillis();
 				}
-				/*if(allAnswersRecived())
+				*/
+				if(allAnswersRecived())
 				{
 					writeInfo();
 					for(NodeHandle nh : _coordinatorIds.keySet()) {
-						coordinatorUpdateMsg(_coordinatorIds.get(nh).updateMsg);
+						coordinatorUpdateMsg(_coordinatorIds.get(nh).getUpdateMsg());
 						break;
 					}
 					for(NodeHandle nh : _coordinatorIds.keySet()) {
-						_coordinatorIds.get(nh).updateMsg = null;
+						_coordinatorIds.get(nh).setUpdateMsg(null);
 					}
-				}*/
+				}
 
 			}
 		}
@@ -407,7 +409,7 @@ public class Model
 		
 		boolean result = false;
 		for(NodeHandle nh : _coordinatorIds.keySet()) {
-			if(_coordinatorIds.get(nh).updateMsg != null)
+			if(_coordinatorIds.get(nh).getUpdateMsg() != null)
 				result = true;
 			else
 				return false;
@@ -418,7 +420,7 @@ public class Model
 	public void writeInfo()
 	{
 		for(NodeHandle nh : _coordinatorIds.keySet()) {
-			frameNumber = _coordinatorIds.get(nh).updateMsg.newFrameNumber;
+			frameNumber = _coordinatorIds.get(nh).getUpdateMsg().newFrameNumber;
 			System.out.println("size: " + _coordinatorIds.keySet().size() + " " + nh.getId() + " --- Framenumber: " + frameNumber);
 		}
 	}

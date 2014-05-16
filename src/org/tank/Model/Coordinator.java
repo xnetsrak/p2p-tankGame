@@ -26,7 +26,7 @@ public class Coordinator
 	private Model _model;
 	private int seqNum = 0;
 	private int frameNumber = 0;
-	private int coordinatorSize = 0;
+	private int coordinatorSize = 3;
 	
 	public Coordinator(PastryNode pastryNode, PastryApp pastryApp, Model model, boolean isCoo)
 	{
@@ -41,8 +41,10 @@ public class Coordinator
 	public void start()
 	{
 		_active = true;
+		sendFrameUpdate();
 		Thread ct = new Thread(new CoordinatorThread());
 		ct.start();
+		
 	}
 	public void setTanks(TankUpdate[] tanks)
 	{
@@ -81,8 +83,12 @@ public class Coordinator
 	{
 		if(recivedMsg.leave)
 			_tanks.remove(recivedMsg.tankUpdate.Id);
-		else if(recivedMsg.frameNumber != this.frameNumber)
-			return;
+		else if(recivedMsg.frameNumber != this.frameNumber) {
+			if(recivedMsg.frameNumber > this.frameNumber)
+				this.frameNumber = recivedMsg.frameNumber;
+			else
+				return;
+		}
 		
 		Tank tank = _tanks.get(recivedMsg.tankUpdate.Id);		
 		if(tank != null && !tank.hasMoved) {
