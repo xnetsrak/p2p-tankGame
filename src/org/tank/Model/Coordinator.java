@@ -1,6 +1,7 @@
 package org.tank.Model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +28,8 @@ public class Coordinator
 	private int seqNum = 0;
 	private int frameNumber = 1;
 	private int coordinatorSize = 3;
+	private CoordinatorUpdateMsg previousFrame = null;
+	public boolean leaving = false;
 	
 	public Coordinator(PastryNode pastryNode, PastryApp pastryApp, Model model, boolean isCoo)
 	{
@@ -110,11 +113,14 @@ public class Coordinator
 		}
 	}
 	
+	public void leave()
+	{
+		leaving = true;
+	}
+	
 	public void reSendFrame()
 	{
-		CoordinatorUpdateMsg updateMsg = new CoordinatorUpdateMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum, frameNumber-1, this.frameNumber);
-		updateMsg.setTank(getTanksUpdate());
-		_pastryApp.sendMulticast(updateMsg, this.frameNumber-1);
+		_pastryApp.sendMulticast(previousFrame, previousFrame.oldFrameNumber);
 		seqNum++;
 	}
 	
@@ -123,7 +129,8 @@ public class Coordinator
 		try
 		{
 			CoordinatorUpdateMsg updateMsg = new CoordinatorUpdateMsg(_pastryApp.endpoint.getLocalNodeHandle(), seqNum, frameNumber, frameNumber+1);
-			updateMsg.setTank(getTanksUpdate());
+			updateMsg.setTank(leaving ? null : getTanksUpdate());
+			previousFrame = updateMsg;
 			_pastryApp.sendMulticast(updateMsg, this.frameNumber);
 			seqNum++;
 			frameNumber++;
@@ -145,6 +152,7 @@ public class Coordinator
 		}
 		TankUpdate[] stockArr = new TankUpdate[tanks.size()];
 		stockArr = tanks.toArray(stockArr);
+		Arrays.sort(stockArr);
 		return stockArr;
 	}
 	
@@ -218,6 +226,8 @@ public class Coordinator
 							Tank t = _tanks.get(id);
 							t.hasMoved = false;
 						}
+						if(leaving)
+							_active = false;
 					}
 					
 					for (Id id : _tanks.keySet()) {

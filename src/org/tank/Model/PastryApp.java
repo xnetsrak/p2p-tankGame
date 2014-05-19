@@ -139,9 +139,6 @@ public class PastryApp implements Application, ScribeClient
 	    	//_model.coordinatorUpdateMsg((CoordinatorUpdateMsg)message);
 	    	_model.coordinatorMsgRecived((CoordinatorUpdateMsg)message);
 	    }
-	    else if(recivedMsg instanceof LeaveScribeMsg) {
-	    	_model.recivedLeaveMsg((LeaveScribeMsg)message);
-	    }
 		
 	}
 	
