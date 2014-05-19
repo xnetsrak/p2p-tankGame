@@ -1,9 +1,13 @@
 package org.tank.Logger;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Date;
 
 import org.tank.Model.PastryApp;
 import org.tank.Msg.CoordinatorUpdateMsg;
@@ -35,11 +39,16 @@ public class Logger implements Application, ScribeClient
 {
 	protected Endpoint endpoint;
 	private PastryNode pastryNode;
-	private Scribe scribeNode;
-	private Topic scribeTopic;
+	Scribe scribeNode;
+	Topic scribeTopic;
 	private ArrayList<NodeHandle> _coordinatorIds = new ArrayList<NodeHandle>();
 	private int seqNum = 0;		// A sequence number used in the Scribe part of the code
 	
+	private String logFileName = "";
+	private File logFile;
+	private FileWriter fileWriter;
+	private BufferedWriter bufferedWriter;
+	private Date now;
 	private long previousFrameStart = 0;
 	private long frameLength;
 	
@@ -51,6 +60,29 @@ public class Logger implements Application, ScribeClient
 		System.out.println("========== Local Port..... " + localPort);
 		System.out.println("========== Boot IP adr.... " + bootIPAddress);
 		System.out.println("========== Boot Port...... " + remotePort);
+		if (args[3] != null) {
+			logFileName = "c:\\" + args[3];
+			System.out.println("========== Log File....... " + logFileName);
+
+			logFile = new File(logFileName);
+			now = new Date();
+			try {
+				fileWriter = new FileWriter(logFile, false); 	// false => overwriting existing file
+				bufferedWriter = new BufferedWriter(fileWriter);
+				bufferedWriter.write("============================================================================================");
+				bufferedWriter.newLine();
+				bufferedWriter.write(now.toString());
+				bufferedWriter.write("          Logger app started");
+				bufferedWriter.newLine();
+				bufferedWriter.write("============================================================================================");
+				bufferedWriter.newLine();
+				// bufferedWriter.close();
+				// fileWriter.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}		
+		}
 		
 		pastryNode = null;
 		scribeNode = null;
@@ -123,15 +155,17 @@ public class Logger implements Application, ScribeClient
 	    }
 	    
 	    if (pastryNode != null) {
-	    	System.out.println("Pastry node created... "+pastryNode);
+	    	System.out.println("Pastry node created... " + pastryNode);
 	    } else {
 	    	System.out.println("<<<< Pastry node = null! >>>>");
 	    }
 	    
 	    // Construct a FreePastry endpoint
-	    this.endpoint = pastryNode.buildEndpoint(this, "loggerAppInstance");
+	    this.endpoint = pastryNode.buildEndpoint(this, "myinstance");
 	    // Construct a Scribe node
-	    scribeNode = new ScribeImpl(pastryNode,"loggerScribeInstance");
+	    scribeNode = new ScribeImpl(pastryNode,"myScribeInstance");
+    	System.out.println("Scribe node created... " + scribeNode);
+
 	    // Construct the topic for the Scribe group
 	    scribeTopic = new Topic(new PastryIdFactory(pastryNode.getEnvironment()), scribeTopicName);
 	    System.out.println("scribeTopic = "+scribeTopicName);
@@ -139,23 +173,23 @@ public class Logger implements Application, ScribeClient
 	    this.endpoint.register();  // Now we can receive messages
 
 	    System.out.println("Scribe node '" + scribeNode + "' configured for topic '" + scribeTopicName + "'");
+	    logEntry(-1, System.currentTimeMillis());
 	    return scribeNode;
 	}
 
-	private void logEntry(int frameNo, long startTime) {
+	private void logEntry(int frameNo, long startTime) throws IOException {
 		frameLength = startTime - previousFrameStart;
 		previousFrameStart = startTime;
-		System.out.format("Frame %9d" + "Start %14d" + "Frame Lenght %6d", frameNo, startTime, frameLength);
+		System.out.format("Frame %9d" + " | Start %16d" + " | Frame Length %10d" + "%n", frameNo, startTime, frameLength);
+		bufferedWriter.write("Frame " + frameNo + "   |   Start " + startTime + "   |   Frame Length " + frameLength);
+		bufferedWriter.newLine();
+		bufferedWriter.flush();
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// Below are methods for the "ScribeClient" interface + a couple of additional ones.
 	// ----------------------------------------------------------------------------------------------------------------
-	/* Subscribes to myTopic. */
-	public void subscribe() {
-		scribeNode.subscribe(scribeTopic, this);
-	}
-	  
+
 	/* Sends the multicast message.*/
 	public void sendMulticast(MyScribeMsg msg) {
 		System.out.println("Node "+endpoint.getLocalNodeHandle()+" broadcasting "+seqNum);
@@ -163,18 +197,16 @@ public class Logger implements Application, ScribeClient
 	}
 	  
 	public boolean anycast(Topic arg0, ScribeContent arg1) {
-		// TODO Auto-generated method stub
+	    System.out.println("The Scribe 'anycast' method was called!");
 		return false;
 	}
 
 	public void childAdded(Topic arg0, NodeHandle arg1) {
-		// TODO Auto-generated method stub
-		
+	    System.out.println("The Scribe 'childAdded' method was called!");
 	}
 
 	public void childRemoved(Topic arg0, NodeHandle arg1) {
-		// TODO Auto-generated method stub
-		
+	    System.out.println("The Scribe 'childRemoved' method was called!");		
 	}
 
 	public void deliver(Topic arg0, ScribeContent message)
@@ -190,7 +222,12 @@ public class Logger implements Application, ScribeClient
 			if (frameNumber > lastLoggedFrameNumber) {
 				lastLoggedFrameNumber = frameNumber;
 				startTime = System.currentTimeMillis();
-				logEntry(frameNumber, startTime);
+				try {
+					logEntry(frameNumber, startTime);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 	    }
 	}
@@ -200,25 +237,29 @@ public class Logger implements Application, ScribeClient
 	}
 
 	public void subscribeFailed(Topic arg0) {
-		// TODO Auto-generated method stub
-		
+	    System.out.println("The 'subscribeFailed' method was called!");
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------
-	// Below are methods from "Application" interface, which are not implemented, as Logger only uses ScribeClient part
+	// Below are methods for the "Application" interface, which are mainly not implemented, as Logger only uses the 
+	// ScribeClient part.
 	// ----------------------------------------------------------------------------------------------------------------
+
 	public void deliver(Id arg0, Message arg1) {
-		// TODO Auto-generated method stub
+	    System.out.println("The Pastry 'deliver' method was called!");
 	}
 
 	public boolean forward(RouteMessage arg0) {
 		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	public void update(NodeHandle arg0, boolean arg1) {
-		// TODO Auto-generated method stub
-		
+	    System.out.println("The Pastry 'update' method was called!");
 	}	
-	
+
+	public String toString() {
+	    return "MyApp "+this.endpoint.getId();
+	}
+
 }

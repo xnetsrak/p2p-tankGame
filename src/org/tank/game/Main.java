@@ -7,7 +7,10 @@ public class Main
 
 	public static void main(String[] args) 
 	{
-		tankgame myGame = new tankgame();
+		Boolean isDummyTank = false;
+		if (args[0] != null) isDummyTank = (args[0].toUpperCase() == "TEST");
+		
+		tankgame myGame = new tankgame(isDummyTank);
 		// Logger logger = new Logger(args);
     }
 }

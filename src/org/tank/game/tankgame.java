@@ -4,6 +4,7 @@ import javax.swing.*;
 
 import org.tank.Members.*;
 import org.tank.Model.Model;
+import org.tank.Logger.AutoDriver;
 
 import rice.p2p.commonapi.Id;
 
@@ -30,7 +31,7 @@ public class tankgame extends JFrame implements ActionListener, WindowListener, 
 	
 	private Model _model;
 
-	public tankgame() {
+	public tankgame(Boolean isDummyTank) {
 
 		jMenuBar = new JMenuBar();
 		jMenu = new JMenu("Game");
@@ -58,6 +59,12 @@ public class tankgame extends JFrame implements ActionListener, WindowListener, 
 		
 		_model = new Model(width, height);
 		_model.addObserver(this);
+		
+		if (isDummyTank) {
+			Thread autoDriverThread = new Thread(new AutoDriver(_model), "AutoDriverThread");
+			autoDriverThread.start();
+		}
+		
 	}
 
 	public void actionPerformed(ActionEvent e) {
