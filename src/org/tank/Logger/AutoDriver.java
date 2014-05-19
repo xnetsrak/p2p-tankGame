@@ -18,7 +18,7 @@ public class AutoDriver implements Runnable
 	private Hero hero;
 	private Random myRand = new Random();
 	private int randomInt100;			// Used to randomize direction, etc. 
-	private int chgDirProb = 20;		// The percent probability of whether the tank must change direction
+	private int chgDirProb = 10;		// The percent probability of whether the tank must change direction
 
 	private int up = 0;					// Directions...    0 = UP	1 = RIGHT	2 = DOWN	3 = LEFT
 	private int right = 1;
@@ -65,7 +65,7 @@ public class AutoDriver implements Runnable
 	
 	public void run() {
 				
-		int currentDirection = up;	// The tanks current direction
+		int currentDirection = up;	// The tank's current direction
 		int nextAction;				// The action to invoke next
 		int nextDirection;			// The direction to go next (used in case of "move" action)
 		
@@ -74,8 +74,8 @@ public class AutoDriver implements Runnable
 			randomInt100 = myRand.nextInt(101);
 			
 			// Choose the next action... 0 = no action	1 = move	2 = shoot
-			if (randomInt100 < 34) { nextAction = 0; } 
-			else if (randomInt100 < 67) { nextAction = 1; }
+			if (randomInt100 < 45) { nextAction = 0; } 
+			else if (randomInt100 < 90) { nextAction = 1; }
 			else { nextAction = 2; }
 
 			switch (nextAction) {
@@ -83,11 +83,13 @@ public class AutoDriver implements Runnable
 					break;
 				}
 				case 1: { // Move
+					randomInt100 = myRand.nextInt(101);
 					if (randomInt100 < chgDirProb) {
 						nextDirection = newDirection(currentDirection);
 					} else {
 						nextDirection = currentDirection;
 					}
+					currentDirection = nextDirection;
 					switch (nextDirection) {
 						case 0: { // UP
 							if (hero.y > 0) model.changeHeroDirection(0);
@@ -106,15 +108,22 @@ public class AutoDriver implements Runnable
 							break;
 						}
 					}
+					break;
 				}
 				case 2: { // Shoot
 					model.shotEnemy();
 					break;
 				}
 			}
-
-		}
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} // End of While loop
 
 	}
+	
 }
 	
