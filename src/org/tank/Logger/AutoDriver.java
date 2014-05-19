@@ -8,12 +8,14 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.tank.Members.Hero;
 import org.tank.Model.Model;
 
 
 public class AutoDriver implements Runnable
 {
 	private Model model;
+	private Hero hero;
 	private Random myRand = new Random();
 	private int randomInt100;			// Used to randomize direction, etc. 
 	private int chgDirProb = 20;		// The percent probability of whether the tank must change direction
@@ -25,6 +27,7 @@ public class AutoDriver implements Runnable
 	
 	public AutoDriver(Model _model) {
 		model = _model;
+		hero = model.getHero();
 	}
 
 	public int newDirection(int curDir) {
@@ -86,47 +89,32 @@ public class AutoDriver implements Runnable
 						nextDirection = currentDirection;
 					}
 					switch (nextDirection) {
-					case 0: { // UP
-						if (hero.y < model.getGameHeight()-30) model.changeHeroDirection(2);			
-						break;
-					}
-					case 1: { // RIGHT
-						break;
-					}
-					case 2: { // DOWN
-						
-					}
-					case 3: { // LEFT
-						
+						case 0: { // UP
+							if (hero.y > 0) model.changeHeroDirection(0);
+							break;
+						}
+						case 1: { // RIGHT
+							if (hero.x < model.getGameWidth()-30) model.changeHeroDirection(1);
+							break;
+						}
+						case 2: { // DOWN
+							if (hero.y < model.getGameHeight()-30) model.changeHeroDirection(2);			
+							break;
+						}
+						case 3: { // LEFT
+							if (hero.x > 0) model.changeHeroDirection(3);
+							break;
+						}
 					}
 				}
 				case 2: { // Shoot
+					model.shotEnemy();
 					break;
 				}
+			}
 
 		}
-			
-			
-			
-			if ((e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_S) && _hero.y < _model.getGameHeight()-30) 
-				_model.changeHeroDirection(2);
-			
-			else if ((e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_W) && _hero.y > 0) 
-				_model.changeHeroDirection(0);
-			
-			else if ((e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_A) && _hero.x > 0) 
-				_model.changeHeroDirection(3);
-			
-			else if ((e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == KeyEvent.VK_D) && _hero.x < _model.getGameWidth()-30) 
-				_model.changeHeroDirection(1);
-			
-			
-			//this.repaint();
-		}
 
-		public void keyReleased(KeyEvent e) {
-			if (e.getKeyCode() == KeyEvent.VK_SPACE)
-				_model.shotEnemy();
 	}
 }
 	
