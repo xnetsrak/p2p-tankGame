@@ -31,7 +31,7 @@ public class tankgame extends JFrame implements ActionListener, WindowListener, 
 	
 	private Model _model;
 
-	public tankgame(Boolean isDummyTank) {
+	public tankgame(Boolean isDummyTank, int localPort, String bootIPAddress, int remotePort) {
 
 		jMenuBar = new JMenuBar();
 		jMenu = new JMenu("Game");
@@ -61,6 +61,12 @@ public class tankgame extends JFrame implements ActionListener, WindowListener, 
 		_model.addObserver(this);
 		
 		if (isDummyTank) {
+			try {
+				joinCreateGame(localPort, bootIPAddress, remotePort);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			Thread autoDriverThread = new Thread(new AutoDriver(_model), "AutoDriverThread");
 			autoDriverThread.start();
 		}
