@@ -70,7 +70,7 @@ public class Model
 		this.gameHeight = gameHeight;
 		
 		_coordinatorIds = Collections.synchronizedMap(new HashMap<NodeHandle, CoordinatorInfo>());
-		_hero = new Hero((int) (Math.random() * getGameWidth()),(int) (Math.random() * getGameHeight()), random.nextInt(4), gameWidth, gameHeight);
+		_hero = new Hero((int) (Math.random() * (getGameWidth()-30)),(int) (Math.random() * (getGameHeight()-30)), random.nextInt(4), gameWidth, gameHeight);
 		
 	}
 	

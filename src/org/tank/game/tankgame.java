@@ -52,7 +52,7 @@ public class tankgame extends JFrame implements ActionListener, WindowListener, 
 		this.setJMenuBar(jMenuBar);
 
 		this.setTitle("P2P tankGame");
-		this.setSize(width+200, height+200);
+		this.setSize(width+60, height+130);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.addWindowListener(this);
 		this.setVisible(true);
