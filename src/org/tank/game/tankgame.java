@@ -77,7 +77,6 @@ public class tankgame extends JFrame implements ActionListener, WindowListener, 
 
 		if (e.getActionCommand().equals("exit")) {
 			_model.leaveGame();
-			System.exit(0);
 		}
 		if (e.getActionCommand().equals("joincreate")) {
 			new CreateJoinPastryDialog(this).setVisible(true);

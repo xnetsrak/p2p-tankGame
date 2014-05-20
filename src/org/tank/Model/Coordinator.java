@@ -87,8 +87,13 @@ public class Coordinator
 	 */
 	public void tankUpdateRequest(TankPositionUpdateMsg recivedMsg)
 	{
-		if(recivedMsg.leave)
+		if(recivedMsg.leave) {
 			_tanks.remove(recivedMsg.tankUpdate.Id);
+			if(recivedMsg.from.equals(_pastryNode.getLocalNodeHandle().getId())) {
+					leave();
+					System.out.println("Coordinator leaving: " + _pastryNode.getLocalNodeHandle());
+			}
+		}
 		else if(recivedMsg.frameNumber < this.frameNumber) {
 			if(recivedMsg.reSendFrame)
 				reSendFrame();
@@ -115,6 +120,10 @@ public class Coordinator
 	
 	public void leave()
 	{
+		for(Id id : _tanks.keySet()) {
+			Tank t = _tanks.get(id);
+			t.hasMoved = true;
+		}
 		leaving = true;
 	}
 	
@@ -132,13 +141,14 @@ public class Coordinator
 			updateMsg.setTank(leaving ? null : getTanksUpdate());
 			previousFrame = updateMsg;
 			_pastryApp.sendMulticast(updateMsg, this.frameNumber);
-			seqNum++;
-			frameNumber++;
 		}
 		catch(Exception ex)
 		{
+			System.out.println("EXCEPTION(COORDINATOR)" + ex.getMessage());
 			ex.printStackTrace();
 		}
+		seqNum++;
+		frameNumber++;
 	}
 	
 	private TankUpdate[] getTanksUpdate()
@@ -227,7 +237,7 @@ public class Coordinator
 							t.hasMoved = false;
 						}
 						if(leaving)
-							_active = false;
+							System.exit(0);
 					}
 					
 					for (Id id : _tanks.keySet()) {

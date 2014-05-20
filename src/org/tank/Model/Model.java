@@ -53,9 +53,11 @@ public class Model
 	private int seqNum = 0;
 	private int frameNumber = -1;
 	private long lastMoveTime = 0;
+	private long lastResendTime = 0;
 	private boolean hasMoved = false;
 	public boolean started = false;
 	public TankPositionUpdateMsg previousUpdateRequest = null;
+	public boolean leaving = false;
 
 	private Coordinator _coordinator = null;
 	private Map<NodeHandle, CoordinatorInfo> _coordinatorIds;
@@ -74,7 +76,7 @@ public class Model
 	
 	public void go()
 	{
-		try { Thread.sleep(1000); } catch(Exception ex) {};
+		try { Thread.sleep(2000); } catch(Exception ex) {};
 		_pastryApp.subscribe();
 		
 		Thread t = new Thread(new RunThread(), "RunThread");
@@ -108,6 +110,7 @@ public class Model
 		    // construct a node
 		    PastryNode node = factory.newNode();
 		    _pastryNode = node;
+		    
 		    
 		    // construct a new MyApp
 		    PastryApp app = new PastryApp(node, this);    
@@ -204,18 +207,32 @@ public class Model
 		TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), fireShot, myPoints, _coordinator != null);
 	    
 	    for(NodeHandle nh : _coordinatorIds.keySet()) {
-	    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
-	    	previousUpdateRequest = updateMsg;
-	    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
-	    	_coordinatorIds.get(nh).clearLastMessage();
-	    	System.out.println("Sending update to Coordinator: " + nh + " fn: " + this.frameNumber);
+	    	
+	    	try
+	    	{
+		    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
+		    	previousUpdateRequest = updateMsg;
+		    	updateMsg.leave = leaving;
+		    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
+		    	_coordinatorIds.get(nh).clearLastMessage();
+		    	System.out.println("Sending update to Coordinator: " + nh + " fn: " + this.frameNumber);
+	    	}
+	    	catch(Exception ex)
+	    	{
+	    		System.out.println("EXCEPTION(Model) - Sending update to Coordinator: " + nh + " fn: " + this.frameNumber);
+	    	}
+	    	
 	    }
 		hasMoved = true;
+		if(leaving && _coordinator == null)
+			System.exit(0);
 		
 	}
 	
 	public synchronized void coordinatorUpdateMsg(CoordinatorUpdateMsg msg)
 	{		
+		
+		
 		
 		//clean dead tanks
 		Set<Id> updatedTanks = new TreeSet<Id>(_enemyTanks.keySet());
@@ -227,6 +244,10 @@ public class Model
 			if(tank.Id.equals(_pastryApp.endpoint.getId()))
 			{
 				myPoints = tank.points;
+				//Is my tank the right place?
+				if(tank.x != _hero.x || tank.y != _hero.y || tank.w != _hero.direct)
+					_hero.updatePosistion(tank.x, tank.y, tank.w);
+				
 				continue;
 			}
 			
@@ -245,6 +266,13 @@ public class Model
 		//clean dead tanks
 		for(Id id : updatedTanks) {
 			_enemyTanks.remove(id);
+			System.out.println("Removeing tank: " + id);
+			for(NodeHandle nh : _coordinatorIds.keySet())
+				if(nh.getId().equals(id)) {
+					System.out.println("Removeing coordinator: " + nh);
+					_coordinatorIds.remove(nh);
+					break;
+				}
 		}
 		
 		if(_coordinator != null && !_coordinator._active)
@@ -262,7 +290,7 @@ public class Model
 	
 	public synchronized void coordinatorMsgRecived(CoordinatorUpdateMsg msg)
 	{
-		System.out.println("Reciving update from Coordinator: " + msg.from + "  newFn: " + msg.newFrameNumber);
+		System.out.println("Reciving update from Coordinator: " + msg.from + "  newFn: " + msg.newFrameNumber + " tankCount: " + (msg._tanks != null ? msg._tanks.length : -1));
 		//coordinatorUpdateMsg(msg);
 		
 		//CoordinatorLeave
@@ -297,6 +325,7 @@ public class Model
 	public CoordinatorUpdateMsg chooseCoordinatorAnswer()
 	{
 		writeInfo();
+		lastResendTime = System.currentTimeMillis();
 		
 		NodeHandle tempNh = null;
 		int count = -1;
@@ -316,31 +345,15 @@ public class Model
 
 	public void recivedLeaveMsg(NodeHandle from)
 	{
-		_enemyTanks.remove(from.getId());
-		if(_coordinatorIds.containsKey(from))
+		if(_coordinatorIds.containsKey(from)) {
 			_coordinatorIds.remove(from);
+			System.out.println("Removeing coordinator: " + from);
+		}
 		notifyObserver();
 	}
 	public void leaveGame()
 	{
-		try
-		{
-			TankUpdate tankUpdate = new TankUpdate(_hero.x, _hero.y, _hero.direct, _pastryApp.endpoint.getId(), false, myPoints, true);
-	
-		    for(NodeHandle nh : _coordinatorIds.keySet()) {
-		    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
-		    	updateMsg.leave = true;
-		    	_pastryApp.routeMyMsgDirect(nh, updateMsg);
-		    	_coordinatorIds.get(nh).clearLastMessage();
-		    }
-			if(_coordinator != null)
-				_coordinator.leave();
-		    hasMoved = true;
-		}
-		catch(Exception ex)
-		{
-			
-		}
+	    leaving = true;
 	}
 	
 	// function to judge whether a bullet has shot the tank
@@ -444,6 +457,7 @@ public class Model
 				if(frameNumber != -1 && System.currentTimeMillis()-lastMoveTime > 50 && !hasMoved) {
 					sendUpdate(false);
 					lastMoveTime = System.currentTimeMillis();
+
 				}
 				/*
 				if(allAnswersRecived())
@@ -460,8 +474,10 @@ public class Model
 				if(reSendPreviousFrame() != null)
 				{
 					NodeHandle nh = reSendPreviousFrame();
+					System.out.println("Aksing coodinator to resend frame " + nh.getId() + " fn: " + frameNumber);
 					previousUpdateRequest.reSendFrame = true;
 					_pastryApp.routeMyMsgDirect(nh, previousUpdateRequest);
+					lastResendTime = System.currentTimeMillis();
 				}
 			}
 		}
@@ -484,7 +500,7 @@ public class Model
 	
 	public NodeHandle reSendPreviousFrame()
 	{
-		if(System.currentTimeMillis()-lastMoveTime > 3000 && started)
+		if(System.currentTimeMillis()-lastResendTime > 3000 && started)
 		{
 			for(NodeHandle nh : _coordinatorIds.keySet()) {
 				if(_coordinatorIds.get(nh).getUpdateMsg() == null)
