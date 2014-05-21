@@ -9,10 +9,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Date;
 
-import org.tank.Model.PastryApp;
 import org.tank.Msg.CoordinatorUpdateMsg;
-import org.tank.Msg.JoinScribeMsg;
-import org.tank.Msg.LeaveScribeMsg;
 import org.tank.Msg.MyScribeMsg;
 
 import rice.environment.Environment;
@@ -44,45 +41,35 @@ public class Logger implements Application, ScribeClient
 	private ArrayList<NodeHandle> _coordinatorIds = new ArrayList<NodeHandle>();
 	private int seqNum = 0;		// A sequence number used in the Scribe part of the code
 	
-	private String logFileName = "";
 	private File logFile;
 	private FileWriter fileWriter;
 	private BufferedWriter bufferedWriter;
 	private Date now;
 	private long previousFrameStart = 0;
 	private long frameLength;
-	
-	public Logger(String[] args)
-	{
-		int localPort = Integer.parseInt(args[0]);
-		String bootIPAddress = args[1];
-		int remotePort = Integer.parseInt(args[2]);
-		System.out.println("========== Local Port..... " + localPort);
-		System.out.println("========== Boot IP adr.... " + bootIPAddress);
-		System.out.println("========== Boot Port...... " + remotePort);
-		if (args[3] != null) {
-			logFileName = "c:\\" + args[3];
-			System.out.println("========== Log File....... " + logFileName);
+	private int lastLoggedFrameNumber = -1;
 
-			logFile = new File(logFileName);
-			now = new Date();
-			try {
-				fileWriter = new FileWriter(logFile, false); 	// false => overwriting existing file
-				bufferedWriter = new BufferedWriter(fileWriter);
-				bufferedWriter.write("============================================================================================");
-				bufferedWriter.newLine();
-				bufferedWriter.write(now.toString());
-				bufferedWriter.write("          Logger app started");
-				bufferedWriter.newLine();
-				bufferedWriter.write("============================================================================================");
-				bufferedWriter.newLine();
-				// bufferedWriter.close();
-				// fileWriter.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}		
-		}
+	
+	public Logger(int localPort, String bootIPAddress, int remotePort, String logFileName)
+	{
+		logFile = new File(logFileName);
+		now = new Date();
+		try {
+			fileWriter = new FileWriter(logFile, false); 	// false => overwriting existing file
+			bufferedWriter = new BufferedWriter(fileWriter);
+			bufferedWriter.write("============================================================================================");
+			bufferedWriter.newLine();
+			bufferedWriter.write(now.toString());
+			bufferedWriter.write("          Logger app started");
+			bufferedWriter.newLine();
+			bufferedWriter.write("============================================================================================");
+			bufferedWriter.newLine();
+			// bufferedWriter.close();
+			// fileWriter.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
 		
 		pastryNode = null;
 		scribeNode = null;
@@ -213,7 +200,7 @@ public class Logger implements Application, ScribeClient
 	{
 		MyScribeMsg msg = (MyScribeMsg)message;
 		CoordinatorUpdateMsg updMsg;
-		int frameNumber, lastLoggedFrameNumber = -1;
+		int frameNumber;
 		long startTime;
 	    
 		if(msg instanceof CoordinatorUpdateMsg) {
