@@ -105,6 +105,10 @@ public class PastryApp implements Application, ScribeClient
 	  public void subscribe() {
 	  		myScribe.subscribe(myTopic, this);
 	  }
+	  /* Unsubscribes to myTopic. */
+	  public void unSubscribe() {
+	  		myScribe.unsubscribe(myTopic, this);
+	  }
 	  
 	  /* Sends the multicast message.*/
 	  public void sendMulticast(MyScribeMsg msg, int frameNumber) {

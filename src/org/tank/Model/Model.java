@@ -212,6 +212,7 @@ public class Model
 	    	
 	    	try
 	    	{
+	    		nh.checkLiveness();
 		    	TankPositionUpdateMsg updateMsg = new TankPositionUpdateMsg(_pastryApp.endpoint.getId(), nh.getId(), tankUpdate, this.frameNumber);
 		    	previousUpdateRequest = updateMsg;
 		    	updateMsg.leave = leaving;
@@ -507,6 +508,7 @@ public class Model
 		if(System.currentTimeMillis()-lastResendTime > 3000 && started)
 		{
 			for(NodeHandle nh : _coordinatorIds.keySet()) {
+				nh.checkLiveness();
 				if(_coordinatorIds.get(nh).getUpdateMsg() == null)
 					return nh; 
 			}

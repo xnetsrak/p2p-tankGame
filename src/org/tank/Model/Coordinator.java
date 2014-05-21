@@ -236,8 +236,10 @@ public class Coordinator
 							Tank t = _tanks.get(id);
 							t.hasMoved = false;
 						}
-						if(leaving)
+						if(leaving) {
+							_pastryApp.unSubscribe();
 							System.exit(0);
+						}
 					}
 					
 					for (Id id : _tanks.keySet()) {
