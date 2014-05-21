@@ -76,7 +76,7 @@ public class tankgame extends JFrame implements ActionListener, WindowListener, 
 	public void actionPerformed(ActionEvent e) {
 
 		if (e.getActionCommand().equals("exit")) {
-			_model.leaveGame();
+			leavegame();
 		}
 		if (e.getActionCommand().equals("joincreate")) {
 			new CreateJoinPastryDialog(this).setVisible(true);
@@ -100,6 +100,13 @@ public class tankgame extends JFrame implements ActionListener, WindowListener, 
     	}
 	    
 	}
+	
+	public void leavegame()
+	{
+		if(!_model.started)
+			System.exit(0);
+		else _model.leaveGame();
+	}
 
 	public void update() {		
 	}
@@ -107,7 +114,7 @@ public class tankgame extends JFrame implements ActionListener, WindowListener, 
 	public void windowActivated(WindowEvent arg0) {}
 	public void windowClosed(WindowEvent arg0) {}
 	public void windowClosing(WindowEvent arg0) {
-		_model.leaveGame();
+		leavegame();
 	}
 	public void windowDeactivated(WindowEvent arg0) {}
 	public void windowDeiconified(WindowEvent arg0) {}

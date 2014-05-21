@@ -161,8 +161,10 @@ public class Model
 		System.out.println("JoinResponse from: " + msg.fromNodeHandle);
 		_coordinatorIds.put(msg.fromNodeHandle, new CoordinatorInfo(msg.frameNumber, null));
 		frameNumber = msg.frameNumber > frameNumber ? msg.frameNumber : frameNumber;
-		if(msg.isCoordinator && _coordinator == null)
+		if(msg.isCoordinator && _coordinator == null) {
 			_coordinator = new Coordinator(_pastryNode, _pastryApp, this, true);
+			System.out.println("Is now coordinator");
+		}
 	}
 	
 	public void changeHeroDirection(int direction)
@@ -392,29 +394,39 @@ public class Model
 	}
 
 	public void hitmytank(Shot s, Tank et) {
-		switch (et.getDirect()) {
-		case 0:
-		case 2:
-			if (s.x >= et.x && s.x <= et.x + 20 && s.y >= et.y && s.y <= et.y + 30) {
-				s.isLive = false;
+		
+		try
+		{
+			switch (et.getDirect()) {
+			case 0:
+			case 2:
+				if (s.x >= et.x && s.x <= et.x + 20 && s.y >= et.y && s.y <= et.y + 30) {
+					s.isLive = false;
 
-				Bomb newbomb = new Bomb(et.getX(), et.getY());
-				_bombs.add(newbomb);
-				notifyObserver();
-			}
-			break;
+					Bomb newbomb = new Bomb(et.getX(), et.getY());
+					_bombs.add(newbomb);
+					notifyObserver();
+				}
+				break;
 
-		case 1:
-		case 3:
+			case 1:
+			case 3:
 
-			if (s.x > et.x && s.x < et.x + 30 && s.y > et.y && s.y < et.y + 20) {
-				s.isLive = false;
+				if (s.x > et.x && s.x < et.x + 30 && s.y > et.y && s.y < et.y + 20) {
+					s.isLive = false;
 
-				Bomb newbomb = new Bomb(et.getX(), et.getY());
-				_bombs.add(newbomb);
-				notifyObserver();
+					Bomb newbomb = new Bomb(et.getX(), et.getY());
+					_bombs.add(newbomb);
+					notifyObserver();
+				}
 			}
 		}
+		catch(Exception ex)
+		{
+			System.out.println("hitmytank " + ex.getMessage());
+		}
+		
+		
 	}
 	
 	class RunThread implements Runnable
@@ -430,46 +442,38 @@ public class Model
 				}
 				
 				//Tank hits
-				for(Id id1 : _enemyTanks.keySet())
-				{
-					Tank shootingTank = _enemyTanks.get(id1);
-					for (int j = 0; j < shootingTank.s.size(); j++)
+				try {
+					for(Id id1 : _enemyTanks.keySet())
 					{
-						for(Id id2 : _enemyTanks.keySet())
+						Tank shootingTank = _enemyTanks.get(id1);
+						for (int j = 0; j < shootingTank.s.size(); j++)
 						{
-							if(id1.equals(id2))
-								continue;
-							Tank hittingTank = _enemyTanks.get(id2);
-							hittank(shootingTank.s.get(j), hittingTank);
+							for(Id id2 : _enemyTanks.keySet())
+							{
+								if(id1.equals(id2))
+									continue;
+								Tank hittingTank = _enemyTanks.get(id2);
+								hittank(shootingTank.s.get(j), hittingTank);
+							}
 						}
+						for (int j = 0; j < shootingTank.s.size(); j++)
+							hitmytank(shootingTank.s.get(j), _hero);
 					}
-					for (int j = 0; j < shootingTank.s.size(); j++)
-						hitmytank(shootingTank.s.get(j), _hero);
+	
+					for(Id id : _enemyTanks.keySet())
+					{
+						for (int j = 0; j < _hero.s.size(); j++)
+							hittank(_hero.s.get(j), _enemyTanks.get(id));
+					}
 				}
-
-				for(Id id : _enemyTanks.keySet())
-				{
-					for (int j = 0; j < _hero.s.size(); j++)
-						hittank(_hero.s.get(j), _enemyTanks.get(id));
-				}
-				
+				catch(Exception ex)
+				{ System.out.println("Exception: " + ex.getMessage()); ex.printStackTrace(); }
 				
 				if(frameNumber != -1 && System.currentTimeMillis()-lastMoveTime > 50 && !hasMoved) {
 					sendUpdate(false);
 					lastMoveTime = System.currentTimeMillis();
 
 				}
-				/*
-				if(allAnswersRecived())
-				{
-					for(NodeHandle nh : _coordinatorIds.keySet()) {
-						coordinatorUpdateMsg(_coordinatorIds.get(nh).getUpdateMsg());
-						break;
-					}
-					for(NodeHandle nh : _coordinatorIds.keySet()) {
-						_coordinatorIds.get(nh).setUpdateMsg(null);
-					}
-				}*/
 				
 				if(reSendPreviousFrame() != null)
 				{
@@ -514,22 +518,20 @@ public class Model
 	{
 		System.out.println("-Coordinator-size: " + _coordinatorIds.keySet().size());
 		for(NodeHandle nh : _coordinatorIds.keySet()) {
+			
 			int fn = _coordinatorIds.get(nh).getUpdateMsg() != null ? _coordinatorIds.get(nh).frameNumber : -2;
 			System.out.println("--coor id: " + nh.getId() + "  Framenumber: " + fn);
 		}
 	}
-	public void setLargestFramenumber()
-	{
-		for(NodeHandle nh : _coordinatorIds.keySet()) {
-			int fn = _coordinatorIds.get(nh).frameNumber;
-			if(fn > this.frameNumber) this.frameNumber = fn;
-		}
-	}
-	public void setFrameNumber(int number, NodeHandle nh)
-	{
-		if(this.frameNumber < number && _coordinatorIds.containsKey(nh))
-			this.frameNumber = number;
-	}
+	/** 
+ 	* You can call this method if the node shuts down nicely.  This will cause it to be removed 
+ 	* from the leafset.  Improves the performance of consistency. 
+ 	*/ 
+ 	public void markDeadForever() { 
+ 		
+ 	
+	} 
+	
 	
 	public void addObserver(Observer obs)
 	{
