@@ -168,7 +168,8 @@ public class Logger implements Application, ScribeClient
 		frameLength = startTime - previousFrameStart;
 		previousFrameStart = startTime;
 		System.out.format("Frame %9d" + " | Start %16d" + " | Frame Length %10d" + "%n", frameNo, startTime, frameLength);
-		bufferedWriter.write("Frame " + frameNo + "   |   Start " + startTime + "   |   Frame Length " + frameLength);
+//		bufferedWriter.write("Frame " + frameNo + "   |   Start " + startTime + "   |   Frame Length " + frameLength);
+		bufferedWriter.write(frameNo + "," + startTime + "," + frameLength);
 		bufferedWriter.newLine();
 		bufferedWriter.flush();
 	}
