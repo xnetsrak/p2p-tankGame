@@ -2,6 +2,7 @@ package org.tank.game;
 
 import javax.swing.*;
 
+import org.tank.Logger.AutoDriver;
 import org.tank.Members.*;
 import org.tank.Model.Model;
 
@@ -28,7 +29,7 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 	
 	private Model _model;
 
-	public tankgame() {
+	public tankgame(Boolean isDummyTank, int localPort, String bootIPAddress, int remotePort) {
 
 		jMenuBar = new JMenuBar();
 		jMenu = new JMenu("Game");
@@ -55,6 +56,18 @@ public class tankgame extends JFrame implements ActionListener, org.tank.Model.O
 		
 		_model = new Model(width, height);
 		_model.addObserver(this);
+		
+		if (isDummyTank) {
+			try {
+				joinCreateGame(localPort, bootIPAddress, remotePort);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			Thread autoDriverThread = new Thread(new AutoDriver(_model), "AutoDriverThread");
+			autoDriverThread.start();
+		}
+
 	}
 
 	public void actionPerformed(ActionEvent e) {
