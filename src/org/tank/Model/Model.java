@@ -118,6 +118,7 @@ public class Model
 		    
 		    node.boot(bootaddress);
 		    
+		    System.out.println("Starting boot into the ring");
 		    // the node may require sending several messages to fully boot into the ring
 		    synchronized(node) {
 		      while(!node.isReady() && !node.joinFailed()) {
@@ -125,6 +126,7 @@ public class Model
 		        node.wait(500);
 		        // abort if can't join
 		        if (node.joinFailed()) {
+		        	System.out.println("Node join failed:");
 		          throw new IOException("Could not join the FreePastry ring.  Reason:"+node.joinFailedReason()); 
 		        }
 		      }       
@@ -156,11 +158,11 @@ public class Model
 	    return _pastryNode != null && _pastryApp != null;
 	}
 	
-	public void tankJoinResponse(JoinResponseMsg msg)
+	public synchronized void tankJoinResponse(JoinResponseMsg msg)
 	{
 		System.out.println("JoinResponse from: " + msg.fromNodeHandle);
 		_coordinatorIds.put(msg.fromNodeHandle, new CoordinatorInfo(msg.frameNumber, null));
-		frameNumber = msg.frameNumber > frameNumber ? msg.frameNumber : frameNumber;
+		frameNumber = msg.frameNumber+50 > frameNumber ? msg.frameNumber+50 : frameNumber;
 		if(msg.isCoordinator && _coordinator == null) {
 			_coordinator = new Coordinator(_pastryNode, _pastryApp, this, true);
 			System.out.println("Is now coordinator");
