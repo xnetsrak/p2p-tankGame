@@ -64,7 +64,6 @@ public class tankgame extends JFrame implements ActionListener, WindowListener, 
 			try {
 				joinCreateGame(localPort, bootIPAddress, remotePort);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			Thread autoDriverThread = new Thread(new AutoDriver(_model), "AutoDriverThread");
@@ -329,11 +328,5 @@ class MyPanel extends JPanel implements java.awt.event.KeyListener, Runnable,  o
 			this.repaint();
 
 		}
-		
 	}
-
 }
-
-
-
-

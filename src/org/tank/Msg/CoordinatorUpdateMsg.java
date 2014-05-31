@@ -1,8 +1,5 @@
 package org.tank.Msg;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
-
 import org.tank.Model.TankUpdate;
 
 import rice.p2p.commonapi.NodeHandle;

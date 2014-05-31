@@ -1,6 +1,4 @@
-package org.tank.Model;
-
-import org.tank.Msg.MyMsg;
+package org.tank.Msg;
 
 import rice.p2p.commonapi.Id;
 

@@ -14,7 +14,6 @@ import org.tank.Msg.JoinScribeMsg;
 import org.tank.Msg.TankPositionUpdateMsg;
 
 import rice.p2p.commonapi.Id;
-import rice.p2p.commonapi.NodeHandle;
 import rice.pastry.PastryNode;
 
 public class Coordinator

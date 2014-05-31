@@ -6,7 +6,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Date;
 
 import org.tank.Msg.CoordinatorUpdateMsg;
@@ -38,7 +37,6 @@ public class Logger implements Application, ScribeClient
 	private PastryNode pastryNode;
 	Scribe scribeNode;
 	Topic scribeTopic;
-	private ArrayList<NodeHandle> _coordinatorIds = new ArrayList<NodeHandle>();
 	private int seqNum = 0;		// A sequence number used in the Scribe part of the code
 	
 	private File logFile;

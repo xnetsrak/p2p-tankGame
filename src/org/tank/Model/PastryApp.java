@@ -3,7 +3,6 @@ package org.tank.Model;
 import org.tank.Msg.CoordinatorUpdateMsg;
 import org.tank.Msg.JoinResponseMsg;
 import org.tank.Msg.JoinScribeMsg;
-import org.tank.Msg.LeaveScribeMsg;
 import org.tank.Msg.MyMsg;
 import org.tank.Msg.MyScribeMsg;
 import org.tank.Msg.TankPositionUpdateMsg;
