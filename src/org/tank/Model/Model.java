@@ -161,7 +161,7 @@ public class Model
 	{
 		System.out.println("JoinResponse from: " + msg.fromNodeHandle);
 		_coordinatorIds.put(msg.fromNodeHandle, new CoordinatorInfo(msg.frameNumber, null));
-		frameNumber = msg.frameNumber+50 > frameNumber ? msg.frameNumber+50 : frameNumber;
+		frameNumber = msg.frameNumber > frameNumber ? msg.frameNumber : frameNumber;
 		if(msg.isCoordinator && _coordinator == null) {
 			_coordinator = new Coordinator(_pastryNode, _pastryApp, this, true);
 			System.out.println("Is now coordinator");

@@ -8,7 +8,6 @@ import org.tank.Msg.MyScribeMsg;
 import org.tank.Msg.TankPositionUpdateMsg;
 
 import rice.p2p.commonapi.Application;
-import rice.p2p.commonapi.CancellableTask;
 import rice.p2p.commonapi.Endpoint;
 import rice.p2p.commonapi.Id;
 import rice.p2p.commonapi.Message;
@@ -28,7 +27,6 @@ public class PastryApp implements Application, ScribeClient
 	  protected Endpoint endpoint;
 	  private Model _model;
 	  
-	  CancellableTask publishTask;
 	  Scribe myScribe;
 	  Topic myTopic;
 	  
